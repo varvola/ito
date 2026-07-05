@@ -1,20 +1,15 @@
 #!/bin/sh
-# GitHub に初回 push する手順を案内する
+# GitHub に push する手順を案内する
 set -e
-USER="${1:-}"
-if [ -z "$USER" ]; then
-  echo "用法: ./push_to_github.sh <GitHubユーザー名>"
-  echo "例:   ./push_to_github.sh taro"
-  exit 1
-fi
-
+USER="${1:-varvola}"
 REPO="ito"
 REMOTE="https://github.com/${USER}/${REPO}.git"
 
 cd "$(dirname "$0")"
+./sync_docs.sh
 
 if git remote get-url origin >/dev/null 2>&1; then
-  echo "origin は既に設定されています: $(git remote get-url origin)"
+  echo "origin: $(git remote get-url origin)"
 else
   git remote add origin "$REMOTE"
   echo "remote を追加: $REMOTE"
@@ -22,27 +17,18 @@ fi
 
 cat <<EOF
 
-=== 次の操作（ブラウザ + ターミナル）===
+=== push ===
+  git add -A && git commit -m "更新"   # 変更がある場合
+  git push -u origin main
 
-【1】ブラウザでリポジトリを作成（まだなら）
-    https://github.com/new
-    - Repository name: ${REPO}
-    - Public
-    - README / .gitignore / license は追加しない
+※ トークンは repo 権限だけでOK（workflow 不要）
 
-【2】このターミナルで push
-    git push -u origin main
+=== Pages 有効化（初回のみ）===
+  https://github.com/${USER}/${REPO}/settings/pages
+  - Source: Deploy from a branch
+  - Branch: main  /  Folder: /docs
 
-【3】Pages を有効化（初回のみ）
-    https://github.com/${USER}/${REPO}/settings/pages
-    - Build and deployment → Source: GitHub Actions
-
-【4】1〜2分待ってデプロイ確認
-    https://github.com/${USER}/${REPO}/actions
-
-【5】スマホで開く
-    https://${USER}.github.io/${REPO}/thread_gps_pwa.html
-
-    記録を書き出す → 読み込む → オフライン準備 → ホームに追加
+=== スマホ URL ===
+  https://${USER}.github.io/${REPO}/thread_gps_pwa.html
 
 EOF

@@ -1,16 +1,25 @@
 # 糸
 
-GPS位置ゲーム PWA。GitHub Pages で配信。
+GPS位置ゲーム PWA。
 
-## スマホで開く
+## スマホ（本番）
 
-`https://<GitHubユーザー名>.github.io/ito/`
+https://varvola.github.io/ito/thread_gps_pwa.html
 
-初回: 記録を書き出す → このURLで読み込む → オフライン準備 → ホームに追加
+## GitHub Pages へ反映
+
+```bash
+./sync_docs.sh
+git add docs/
+git commit -m "Update PWA"
+git push
+```
+
+Settings → Pages → **main** ブランチ / **/docs** フォルダ
 
 ## ローカル開発
 
 ```bash
-python3 serve_https.py   # 家のWiFi・実機テスト
-python3 serve_outdoor.py # 屋外・Cloudflareトンネル
+python3 serve_https.py
+python3 serve_outdoor.py
 ```

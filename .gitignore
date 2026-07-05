@@ -8,14 +8,24 @@ _site/
 
 # Android SDK（巨大）
 platform-tools/
+platform-tools.zip
+bin/
+
+# 一時ファイル
+.tmp_frames/
+.tmp_frames_outdoor/
 
 # ローカル・バックアップ
 *.json
 !manifest.json
 Screen_Recording_*.mp4
 
+# 旧プロトタイプ（公開不要）
+walkmap_*.html
+20260607_*.html
+
 # OS
 .DS_Store
 
-# 企画書は公開しない（必要なら削除してコミット可）
+# 企画書は公開しない
 GPS位置ゲー_企画書.md
