@@ -1,0 +1,32 @@
+{
+  "name": "糸",
+  "short_name": "糸",
+  "description": "あなたの移動が糸になり、やがて服になる",
+  "id": "./thread_gps_pwa.html",
+  "start_url": "./thread_gps_pwa.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#17202a",
+  "theme_color": "#17202a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

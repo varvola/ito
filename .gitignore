@@ -1,0 +1,21 @@
+# 証明書・鍵
+dev-cert.pem
+dev-key.pem
+*.pem
+
+# ビルド出力
+_site/
+
+# Android SDK（巨大）
+platform-tools/
+
+# ローカル・バックアップ
+*.json
+!manifest.json
+Screen_Recording_*.mp4
+
+# OS
+.DS_Store
+
+# 企画書は公開しない（必要なら削除してコミット可）
+GPS位置ゲー_企画書.md

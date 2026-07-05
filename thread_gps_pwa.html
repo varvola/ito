@@ -1,0 +1,4346 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="theme-color" content="#17202a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="糸" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <title>糸 — Day 10 · v24</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon-192.png" type="image/png" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+  <style>
+    * { box-sizing: border-box; }
+
+    body.memo-overlay-open {
+      touch-action: auto;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #17202a;
+      font-family: system-ui, sans-serif;
+      color: white;
+      touch-action: none;
+    }
+
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #1a2332;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 70px 70px;
+    }
+
+    #threadLayer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #player {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      background: #fff;
+      border: 3px solid #3aa0ff;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+      box-shadow: 0 0 16px #3aa0ff;
+      transition: box-shadow 0.15s ease;
+    }
+
+    #player.moving {
+      box-shadow: 0 0 24px #3aa0ff, 0 0 48px rgba(58, 160, 255, 0.35);
+    }
+
+    #ui {
+      position: fixed;
+      left: 12px;
+      top: 12px;
+      z-index: 20;
+      background: rgba(0,0,0,0.55);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+      max-width: min(280px, calc(100vw - 24px));
+    }
+
+    #ui strong { font-size: 14px; }
+
+    #message {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%);
+      z-index: 20;
+      background: rgba(0,0,0,0.75);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      max-width: calc(100vw - 32px);
+    }
+
+    #actions {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    button {
+      background: rgba(0,0,0,0.55);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:active { background: rgba(255,255,255,0.12); }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.85;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    #nav {
+      position: fixed;
+      left: 50%;
+      bottom: 72px;
+      transform: translateX(-50%);
+      z-index: 25;
+      display: flex;
+      gap: 8px;
+      background: rgba(0,0,0,0.6);
+      padding: 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    #nav button {
+      border-radius: 999px;
+      padding: 8px 18px;
+      border: none;
+      background: transparent;
+    }
+
+    #nav button.active {
+      background: rgba(255,255,255,0.18);
+    }
+
+    #viewShop {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      overflow-y: auto;
+      padding: 16px 16px 120px;
+      background: #141c28;
+    }
+
+    #viewShop[hidden] { display: none; }
+
+    #viewShop h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+    }
+
+    #shopIntro {
+      margin: 0 0 16px;
+      opacity: 0.75;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    #garmentList {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .garmentCard {
+      display: flex;
+      gap: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .garmentPreview {
+      width: 88px;
+      height: 120px;
+      border-radius: 10px;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .garmentMeta {
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .garmentMeta strong { font-size: 15px; }
+
+    .garmentName {
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(255,255,255,0.25);
+      text-underline-offset: 3px;
+    }
+
+    .garmentNameHint {
+      display: block;
+      font-size: 11px;
+      opacity: 0.55;
+      margin-top: 2px;
+    }
+
+    .garmentEmpty {
+      opacity: 0.7;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 24px 12px;
+      text-align: center;
+    }
+
+    .shopSection {
+      margin-bottom: 18px;
+    }
+
+    .shopSection h3 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .shopPending,
+    .shopRestDay {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .shopPending {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .shopPendingPreview {
+      width: 56px;
+      height: 76px;
+      border-radius: 8px;
+      overflow: hidden;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .shopRestDay {
+      opacity: 0.72;
+      font-size: 12px;
+    }
+
+    .colorBreakdown {
+      display: flex;
+      height: 6px;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .colorBreakdown span {
+      display: block;
+      height: 100%;
+    }
+
+    #actions button.secondary {
+      font-size: 11px;
+      opacity: 0.88;
+    }
+
+    .colorLabels {
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.72;
+    }
+
+    .shopSpunToday {
+      background: rgba(253, 224, 71, 0.08);
+      border-color: rgba(253, 224, 71, 0.22);
+    }
+
+    #installBanner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 72px;
+      z-index: 30;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(20, 28, 38, 0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    #installBanner.visible { display: flex; }
+
+    #updateBanner {
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 120px;
+      z-index: 31;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(167, 139, 250, 0.95);
+      color: #1a1520;
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    #updateBanner.visible { display: flex; }
+
+    #offlinePrepBanner {
+      position: fixed;
+      top: 54px;
+      left: 12px;
+      right: 12px;
+      bottom: auto;
+      z-index: 35;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: rgba(20, 28, 38, 0.96);
+      border: 1px solid rgba(125, 211, 252, 0.35);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    #offlinePrepBanner.visible { display: flex; }
+
+    #offlinePrepBanner button {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #7dd3fc;
+      color: #0f172a;
+      cursor: pointer;
+    }
+
+    #updateBanner button {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #17202a;
+      color: white;
+      cursor: pointer;
+    }
+
+    #installBanner button {
+      flex-shrink: 0;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #fde047;
+      color: #17202a;
+      cursor: pointer;
+    }
+
+    #installBanner .dismiss {
+      background: transparent;
+      color: rgba(255,255,255,0.55);
+      padding: 4px 8px;
+    }
+
+    #installModal {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.72);
+    }
+
+    #installModal.visible { display: flex; }
+
+    .installModalCard {
+      width: min(360px, 100%);
+      background: #1e2836;
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 18px 16px 14px;
+      line-height: 1.55;
+      font-size: 13px;
+    }
+
+    .installModalCard h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+    }
+
+    .installModalCard ol {
+      margin: 0 0 14px;
+      padding-left: 1.2em;
+    }
+
+    .installModalCard li { margin-bottom: 6px; }
+
+    .installModalActions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .installModalActions button {
+      border: none;
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #installModalPrompt {
+      background: #fde047;
+      color: #17202a;
+    }
+
+    #installModalClose {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    body.is-standalone #installBanner,
+    body.is-standalone #installHomeButton { display: none !important; }
+
+    #spinOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 14, 20, 0.88);
+      pointer-events: none;
+    }
+
+    #spinOverlay.visible {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    #spinOverlay.visible.flash {
+      animation: spinFade 1.8s ease forwards;
+      pointer-events: none;
+    }
+
+    #spinOverlayCard {
+      text-align: center;
+      padding: 24px 20px;
+      max-width: min(320px, calc(100vw - 32px));
+      animation: spinCardIn 0.45s ease;
+    }
+
+    #spinOverlayPreview {
+      width: 110px;
+      height: 150px;
+      margin: 0 auto 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    #spinOverlayPreview.restDay {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    #spinOverlayTitle {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    #spinOverlaySubtitle {
+      margin-top: 8px;
+      font-size: 13px;
+      line-height: 1.55;
+      opacity: 0.78;
+    }
+
+    #spinOverlayActions {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    #spinOverlay.visible.morning #spinOverlayActions {
+      display: flex;
+    }
+
+    #spinOverlayActions button {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    #spinOverlayHangoutButton {
+      background: #a78bfa;
+      color: #1a1520;
+    }
+
+    #spinOverlayDismissButton {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    @keyframes spinFade {
+      0% { opacity: 0; }
+      15% { opacity: 1; }
+      75% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    @keyframes spinCardIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    body.view-shop #game,
+    body.view-shop #player,
+    body.view-shop #ui,
+    body.view-shop #actions,
+    body.view-hangout #game,
+    body.view-hangout #player,
+    body.view-hangout #ui,
+    body.view-hangout #actions { display: none; }
+
+    #viewHangout {
+      position: fixed;
+      inset: 0;
+      z-index: 15;
+      overflow-y: auto;
+      padding: 16px 16px 120px;
+      background: linear-gradient(180deg, #1a1520 0%, #141c28 100%);
+    }
+
+    #viewHangout[hidden] { display: none; }
+
+    #viewHangout h2 {
+      margin: 0 0 4px;
+      font-size: 20px;
+    }
+
+    #hangoutIntro {
+      margin: 0 0 16px;
+      opacity: 0.75;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    #hangoutScene {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 12px 0 18px;
+    }
+
+    #hangoutNpcList {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .npcCard {
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 14px 16px 12px;
+      min-width: 148px;
+      max-width: 168px;
+      flex: 1 1 148px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+      color: inherit;
+      font: inherit;
+    }
+
+    .npcCard.active {
+      border-color: rgba(253, 224, 71, 0.55);
+      background: rgba(253, 224, 71, 0.08);
+      box-shadow: 0 0 0 1px rgba(253, 224, 71, 0.15);
+    }
+
+    .npcCardPersonality {
+      font-size: 10px;
+      opacity: 0.55;
+      margin-bottom: 2px;
+    }
+
+    .npcGarmentPreview {
+      width: 72px;
+      height: 98px;
+      margin: 0 auto 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+    }
+
+    .npcName {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .npcWearing {
+      font-size: 12px;
+      opacity: 0.72;
+      line-height: 1.45;
+    }
+
+    #dialogueBox {
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 14px;
+      min-height: 120px;
+      margin-bottom: 12px;
+    }
+
+    #dialogueSpeaker {
+      font-size: 12px;
+      opacity: 0.65;
+      margin-bottom: 6px;
+    }
+
+    #dialogueText {
+      font-size: 15px;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    #dialogueChoices {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #dialogueChoices button {
+      text-align: left;
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.08);
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    #hangoutActions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #hangoutActions button {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    #hangoutTalkButton {
+      background: #a78bfa !important;
+      color: #1a1520 !important;
+    }
+
+    #hangoutBrowseButton:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    #hangoutActions button.secondary {
+      background: transparent !important;
+      color: rgba(255, 255, 255, 0.55) !important;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 12px;
+    }
+
+    #colorDemoOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 14, 20, 0.92);
+      padding: 16px;
+    }
+
+    #colorDemoOverlay.visible {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    #ftueOverlay,
+    #personalTestReadyOverlay,
+    #testMemoOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 14, 20, 0.94);
+      padding: 16px;
+    }
+
+    #ftueOverlay.visible,
+    #personalTestReadyOverlay.visible {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    #testMemoOverlay.visible {
+      display: flex;
+      pointer-events: auto;
+      align-items: flex-start;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      padding-top: 12px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+    }
+
+    #testMemoCard {
+      width: min(380px, calc(100vw - 32px));
+      max-height: none;
+      overflow-y: visible;
+      margin: 0 auto 24px;
+      touch-action: auto;
+      pointer-events: auto;
+    }
+
+    .testMemoInputBox {
+      margin: 12px 0 16px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(125, 211, 252, 0.08);
+      border: 1px solid rgba(125, 211, 252, 0.22);
+      cursor: text;
+      touch-action: auto;
+    }
+
+    #testMemoActions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+      position: sticky;
+      bottom: 0;
+      padding-top: 10px;
+      background: linear-gradient(to top, rgba(10, 14, 20, 0.98) 70%, rgba(10, 14, 20, 0));
+    }
+
+    #ftueCard,
+    #personalTestReadyCard,
+    #testMemoCard {
+      background: rgba(0, 0, 0, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      line-height: 1.55;
+    }
+
+    #ftueCard h3,
+    #personalTestReadyCard h3,
+    #testMemoCard h3 {
+      margin: 8px 0 10px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    #ftueCard p,
+    #personalTestReadyCard p,
+    #personalTestReadyCard li {
+      margin: 0 0 10px;
+      font-size: 13px;
+      opacity: 0.88;
+    }
+
+    #personalTestReadyCard ul {
+      margin: 0 0 14px;
+      padding-left: 18px;
+    }
+
+    #ftueStepIndicator {
+      font-size: 11px;
+      letter-spacing: 0.04em;
+      opacity: 0.55;
+      text-transform: uppercase;
+    }
+
+    #ftueActions,
+    #personalTestReadyActions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 14px;
+    }
+
+    .personalTestProgress {
+      margin-top: 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      opacity: 0.82;
+    }
+
+    body.personal-test-mode:not(.dev-tools-visible) #devActions,
+    body.personal-test-mode:not(.dev-tools-visible) #personalTestStartButton,
+    body.personal-test-mode:not(.dev-tools-visible) #hangoutResetPurchasesButton {
+      display: none !important;
+    }
+
+    body:not(.personal-test-mode) #testMemoButton {
+      display: none !important;
+    }
+
+    #testMemoCard textarea {
+      display: block;
+      width: 100%;
+      min-height: 120px;
+      margin: 0;
+      padding: 14px;
+      border-radius: 12px;
+      border: 2px solid rgba(125, 211, 252, 0.55);
+      background: rgba(255, 255, 255, 0.08);
+      color: inherit;
+      font: inherit;
+      font-size: 16px;
+      line-height: 1.5;
+      resize: vertical;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+      touch-action: auto;
+      -webkit-user-select: text;
+      user-select: text;
+      pointer-events: auto;
+    }
+
+    #testMemoCard textarea:focus {
+      outline: none;
+      border-color: #7dd3fc;
+      background: rgba(255, 255, 255, 0.12);
+      box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.2);
+    }
+
+    .testMemoInputLabel {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .testMemoInputHint {
+      font-size: 12px;
+      opacity: 0.72;
+      margin-bottom: 10px;
+    }
+
+    .testMemoHistoryTitle {
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.65;
+      margin-bottom: 8px;
+    }
+
+    #offlineBadge {
+      position: fixed;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.72);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.85);
+      pointer-events: none;
+    }
+
+    #offlineBadge[hidden] { display: none !important; }
+
+    #testMemoHistory {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      max-height: 140px;
+      overflow-y: auto;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    #testMemoHistory li {
+      padding: 8px 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #testMemoHistory li:first-child { border-top: none; }
+
+    .testMemoDate {
+      display: block;
+      font-size: 11px;
+      opacity: 0.6;
+      margin-bottom: 2px;
+    }
+
+    body.personal-test-mode #personalTestProgress {
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-color: rgba(255, 255, 255, 0.25);
+      text-underline-offset: 3px;
+    }
+
+    body.personal-test-mode #appTitle {
+      cursor: pointer;
+    }
+
+    #colorDemoCard {
+      width: min(360px, calc(100vw - 32px));
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    #colorDemoCard h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    #colorDemoCard p {
+      margin: 0 0 14px;
+      opacity: 0.78;
+      font-size: 12px;
+    }
+
+    .colorDemoRow {
+      margin-bottom: 16px;
+    }
+
+    .colorDemoRow h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .colorDemoSwatches {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .colorDemoSwatch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .colorDemoSwatch span {
+      flex: 1;
+      font-size: 11px;
+      opacity: 0.8;
+    }
+
+    .colorDemoLine {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.12);
+    }
+
+    #colorDemoClose {
+      width: 100%;
+      margin-top: 4px;
+      border: none;
+      border-radius: 999px;
+      padding: 10px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      cursor: pointer;
+    }
+
+    .garmentStatus {
+      display: inline-block;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .garmentStatusUnsold {
+      background: rgba(253, 224, 71, 0.15);
+      color: #fde047;
+      border: 1px solid rgba(253, 224, 71, 0.35);
+    }
+
+    .garmentStatusWorn {
+      background: rgba(167, 139, 250, 0.18);
+      color: #c4b5fd;
+      border: 1px solid rgba(167, 139, 250, 0.35);
+    }
+
+    .garmentStatusSold {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+  </style>
+</head>
+<body tabindex="0">
+  <div id="offlineBadge" hidden>オフライン — この端末の記録で動いています</div>
+
+  <div id="game">
+    <svg id="threadLayer"></svg>
+  </div>
+  <div id="player"></div>
+
+  <div id="ui">
+    <strong id="appTitle">糸</strong>
+    <div id="personalTestProgress" class="personalTestProgress" hidden></div>
+    <span id="devDayTitle" hidden></span><br />
+    モード: <span id="mode">—</span><br />
+    GPS: <span id="gpsStatus">—</span><br />
+    今日の糸: <span id="threadCount">0</span> 本<br />
+    移動: <span id="distanceTotal">0</span> m<br />
+    次の糸まで: <span id="nextThread">—</span>
+    <div class="legend">
+      <span><i class="dot" style="background:#7dd3fc"></i>朝</span>
+      <span><i class="dot" style="background:#fde047"></i>昼</span>
+      <span><i class="dot" style="background:#fb923c"></i>夕</span>
+      <span><i class="dot" style="background:#a78bfa"></i>夜</span>
+    </div>
+  </div>
+
+  <div id="actions">
+    <button id="gpsButton" type="button">GPS開始</button>
+    <button id="personalTestStartButton" type="button" class="secondary">14日テストを始める</button>
+    <button id="installHomeButton" type="button" class="secondary">ホームに追加</button>
+    <button id="exportBackupButton" type="button" class="secondary">記録を書き出す</button>
+    <button id="importBackupButton" type="button" class="secondary">記録を読み込む</button>
+    <button id="importClipboardButton" type="button" class="secondary">記録を貼り付け</button>
+    <button id="offlinePrepActionButton" type="button" class="secondary">オフライン準備</button>
+    <button id="testMemoButton" type="button" class="secondary">テストメモ</button>
+    <div id="devActions">
+      <button id="spinTestButton" type="button">今日を紡ぐ</button>
+      <button id="midnightTestButton" type="button" class="secondary">0:00テスト</button>
+      <button id="hangoutTestButton" type="button" class="secondary">会話テスト</button>
+      <button id="colorDemoButton" type="button" class="secondary">色見本</button>
+      <button id="resetButton" type="button">今日リセット</button>
+      <button id="resetPurchasesButton" type="button" class="secondary">購入リセット</button>
+      <button id="forceReloadButton" type="button" class="secondary">強制更新</button>
+    </div>
+    <input id="importBackupInput" type="file" accept="application/json,.json" hidden />
+  </div>
+
+  <nav id="nav">
+    <button id="tabThread" type="button" class="active">糸</button>
+    <button id="tabShop" type="button">服屋</button>
+    <button id="tabHangout" type="button">たむろ</button>
+  </nav>
+
+  <div id="viewShop" hidden>
+    <h2>服屋</h2>
+    <p id="shopIntro">0:00 に昨日の糸が1着になる。ここに並ぶ服は、あなたの一日そのもの。</p>
+    <div id="garmentList"></div>
+  </div>
+
+  <div id="viewHangout" hidden>
+    <h2>たむろ場</h2>
+    <p id="hangoutIntro">街の人が、あなたの服を選んで着る場所。</p>
+    <div id="hangoutScene">
+      <div id="hangoutNpcList"></div>
+    </div>
+    <div id="dialogueBox">
+      <div id="dialogueSpeaker">—</div>
+      <div id="dialogueText">話しかけてみて。</div>
+      <div id="dialogueChoices"></div>
+    </div>
+    <div id="hangoutActions">
+      <button id="hangoutTalkButton" type="button">話しかける</button>
+      <button id="hangoutBrowseButton" type="button">服屋を見てもらう</button>
+      <button id="hangoutResetPurchasesButton" type="button" class="secondary">購入をやり直す</button>
+    </div>
+  </div>
+
+  <div id="offlinePrepBanner">
+    <div id="offlinePrepText">WiFiを切る前に、アプリ本体をこの端末に保存してください</div>
+    <button id="offlinePrepBannerButton" type="button">準備する</button>
+  </div>
+
+  <div id="updateBanner">
+    <div>新しい版があります</div>
+    <button id="updateReloadButton" type="button">更新</button>
+  </div>
+
+  <div id="installBanner">
+    <div id="installBannerText">ホーム画面に追加すると、次から開きやすくなります</div>
+    <button id="installButton" type="button">追加</button>
+    <button id="installDismiss" type="button" class="dismiss">×</button>
+  </div>
+
+  <div id="installModal" hidden>
+    <div class="installModalCard">
+      <h3>ホーム画面に追加</h3>
+      <ol id="installSteps"></ol>
+      <div class="installModalActions">
+        <button id="installModalClose" type="button">閉じる</button>
+        <button id="installModalPrompt" type="button" hidden>追加する</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="spinOverlay" aria-hidden="true">
+    <div id="spinOverlayCard">
+      <div id="spinOverlayPreview"></div>
+      <div id="spinOverlayTitle"></div>
+      <div id="spinOverlaySubtitle"></div>
+      <div id="spinOverlayActions">
+        <button id="spinOverlayHangoutButton" type="button">たむろ場へ</button>
+        <button id="spinOverlayDismissButton" type="button" class="secondary">服屋で見る</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="ftueOverlay" hidden aria-hidden="true">
+    <div id="ftueCard">
+      <div id="ftueStepIndicator">1 / 4</div>
+      <h3 id="ftueTitle"></h3>
+      <p id="ftueBody"></p>
+      <div id="ftueActions">
+        <button id="ftueSkipButton" type="button" class="secondary">スキップ</button>
+        <button id="ftueNextButton" type="button">次へ</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="personalTestReadyOverlay" hidden aria-hidden="true">
+    <div id="personalTestReadyCard">
+      <h3>14日・自用テスト</h3>
+      <p>日常の通勤や散歩のまま、2週間使ってみます。目標は <strong>服が10着以上</strong> 並ぶこと。</p>
+      <ul>
+        <li>毎日：GPS開始して歩く（画面は開いたまま）</li>
+        <li>翌朝：服屋を開いて、たむろ場へ</li>
+        <li>週1回くらい：記録を書き出す（バックアップ）</li>
+        <li>位置情報は端末内だけ。外に送りません</li>
+      </ul>
+      <p>家の WiFi URL（<code>192.168.1.6:8766</code>）から開くと記録が安定します。</p>
+      <div id="personalTestReadyActions">
+        <button id="personalTestLaterButton" type="button" class="secondary">あとで</button>
+        <button id="personalTestConfirmButton" type="button">始める</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="testMemoOverlay" hidden aria-hidden="true">
+    <div id="testMemoCard">
+      <h3>テストメモ</h3>
+      <p id="testMemoSummary"></p>
+      <div class="testMemoInputBox">
+        <div class="testMemoInputLabel" id="testMemoDateLabel">今日のメモ</div>
+        <div class="testMemoInputHint">▼ 下の枠をタップして入力</div>
+        <textarea id="testMemoInput" placeholder="例: 毎回アプリを開くのが面倒 / ソラの会話がよかった"></textarea>
+      </div>
+      <div id="testMemoHistorySection" hidden>
+        <div class="testMemoHistoryTitle">過去のメモ</div>
+        <ul id="testMemoHistory"></ul>
+      </div>
+      <div id="testMemoActions">
+        <button id="testMemoCloseButton" type="button" class="secondary">閉じる</button>
+        <button id="testMemoSaveButton" type="button">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="colorDemoOverlay" hidden>
+    <div id="colorDemoCard">
+      <h3>糸の色見本</h3>
+      <p>PC の WASD は速度が一定なので、差は GPS 散歩で出やすいです。服の色比率は従来どおり朝/昼/夕/夜の4色です。</p>
+      <div id="colorDemoTimeRow" class="colorDemoRow">
+        <h4>時間帯グラデ</h4>
+        <div id="colorDemoTimeSwatches" class="colorDemoSwatches"></div>
+      </div>
+      <div id="colorDemoSpeedRow" class="colorDemoRow">
+        <h4>速度 → 明暗（同じ昼）</h4>
+        <div id="colorDemoSpeedSwatches" class="colorDemoSwatches"></div>
+      </div>
+      <button id="colorDemoClose" type="button">閉じる</button>
+    </div>
+  </div>
+
+  <div id="message">歩くと、色の糸が生まれます</div>
+
+  <script>
+    const STORAGE_PREFIX = "thread_gps_pwa_";
+    const MIN_FILTER_M = 5;
+    const MIN_MOVE_SEGMENT_M = 8;
+    const MIN_MOVE_SEGMENT_KEYBOARD_M = 3;
+    const GPS_MIN_WALK_SPEED = 0.5;
+    const GPS_ACCURACY_MARGIN = 2.2;
+    const GPS_WARMUP_READINGS = 8;
+    const STAY_THRESHOLD_MS = 30000;
+    const STAY_RADIUS_M = 5;
+    const MAX_SPEED_MPS = 200 / 3.6;
+    const PX_PER_M = 14;
+    const GRID_M = 5;
+    const KEYBOARD_SPEED_MPS = 8;
+    const DEV_SESSION_DAY = 10;
+    const APP_SHELL_VERSION = 24;
+    const OFFLINE_CACHE = "ito-shell-v24";
+    const BACKUP_FORMAT_VERSION = 1;
+    const PERSONAL_TEST_DAYS = 14;
+    const PERSONAL_TEST_GARMENT_GOAL = 10;
+
+    const threadLayer = document.getElementById("threadLayer");
+    const modeEl = document.getElementById("mode");
+    const gpsStatusEl = document.getElementById("gpsStatus");
+    const threadCountEl = document.getElementById("threadCount");
+    const distanceTotalEl = document.getElementById("distanceTotal");
+    const nextThreadEl = document.getElementById("nextThread");
+    const messageEl = document.getElementById("message");
+    const gpsButton = document.getElementById("gpsButton");
+    const resetButton = document.getElementById("resetButton");
+    const resetPurchasesButton = document.getElementById("resetPurchasesButton");
+    const forceReloadButton = document.getElementById("forceReloadButton");
+    const exportBackupButton = document.getElementById("exportBackupButton");
+    const testMemoButton = document.getElementById("testMemoButton");
+    const testMemoOverlayEl = document.getElementById("testMemoOverlay");
+    const testMemoSummaryEl = document.getElementById("testMemoSummary");
+    const testMemoInputEl = document.getElementById("testMemoInput");
+    const testMemoHistoryEl = document.getElementById("testMemoHistory");
+    const testMemoCloseButtonEl = document.getElementById("testMemoCloseButton");
+    const testMemoDateLabelEl = document.getElementById("testMemoDateLabel");
+    const testMemoHistorySectionEl = document.getElementById("testMemoHistorySection");
+    const testMemoSaveButtonEl = document.getElementById("testMemoSaveButton");
+    const offlineBadgeEl = document.getElementById("offlineBadge");
+    const importBackupButton = document.getElementById("importBackupButton");
+    const importClipboardButton = document.getElementById("importClipboardButton");
+    const importBackupInput = document.getElementById("importBackupInput");
+    const spinTestButton = document.getElementById("spinTestButton");
+    const midnightTestButton = document.getElementById("midnightTestButton");
+    const hangoutTestButton = document.getElementById("hangoutTestButton");
+    const colorDemoButton = document.getElementById("colorDemoButton");
+    const colorDemoOverlayEl = document.getElementById("colorDemoOverlay");
+    const colorDemoTimeSwatchesEl = document.getElementById("colorDemoTimeSwatches");
+    const colorDemoSpeedSwatchesEl = document.getElementById("colorDemoSpeedSwatches");
+    const colorDemoCloseEl = document.getElementById("colorDemoClose");
+    const devDayTitleEl = document.getElementById("devDayTitle");
+    const appTitleEl = document.getElementById("appTitle");
+    const personalTestProgressEl = document.getElementById("personalTestProgress");
+    const personalTestStartButton = document.getElementById("personalTestStartButton");
+    const ftueOverlayEl = document.getElementById("ftueOverlay");
+    const ftueStepIndicatorEl = document.getElementById("ftueStepIndicator");
+    const ftueTitleEl = document.getElementById("ftueTitle");
+    const ftueBodyEl = document.getElementById("ftueBody");
+    const ftueSkipButtonEl = document.getElementById("ftueSkipButton");
+    const ftueNextButtonEl = document.getElementById("ftueNextButton");
+    const personalTestReadyOverlayEl = document.getElementById("personalTestReadyOverlay");
+    const personalTestLaterButtonEl = document.getElementById("personalTestLaterButton");
+    const personalTestConfirmButtonEl = document.getElementById("personalTestConfirmButton");
+    const playerEl = document.getElementById("player");
+    const tabThread = document.getElementById("tabThread");
+    const tabShop = document.getElementById("tabShop");
+    const tabHangout = document.getElementById("tabHangout");
+    const viewShop = document.getElementById("viewShop");
+    const viewHangout = document.getElementById("viewHangout");
+    const hangoutIntroEl = document.getElementById("hangoutIntro");
+    const hangoutNpcListEl = document.getElementById("hangoutNpcList");
+    const dialogueSpeakerEl = document.getElementById("dialogueSpeaker");
+    const dialogueTextEl = document.getElementById("dialogueText");
+    const dialogueChoicesEl = document.getElementById("dialogueChoices");
+    const hangoutTalkButtonEl = document.getElementById("hangoutTalkButton");
+    const hangoutBrowseButtonEl = document.getElementById("hangoutBrowseButton");
+    const hangoutResetPurchasesButtonEl = document.getElementById("hangoutResetPurchasesButton");
+    const garmentListEl = document.getElementById("garmentList");
+    const shopIntroEl = document.getElementById("shopIntro");
+    const installBannerEl = document.getElementById("installBanner");
+    const installBannerTextEl = document.getElementById("installBannerText");
+    const installButtonEl = document.getElementById("installButton");
+    const installDismissEl = document.getElementById("installDismiss");
+    const installHomeButtonEl = document.getElementById("installHomeButton");
+    const installModalEl = document.getElementById("installModal");
+    const installStepsEl = document.getElementById("installSteps");
+    const installModalCloseEl = document.getElementById("installModalClose");
+    const installModalPromptEl = document.getElementById("installModalPrompt");
+    const updateBannerEl = document.getElementById("updateBanner");
+    const offlinePrepBannerEl = document.getElementById("offlinePrepBanner");
+    const offlinePrepTextEl = document.getElementById("offlinePrepText");
+    const offlinePrepBannerButtonEl = document.getElementById("offlinePrepBannerButton");
+    const offlinePrepActionButtonEl = document.getElementById("offlinePrepActionButton");
+    const updateReloadButtonEl = document.getElementById("updateReloadButton");
+    const spinOverlayEl = document.getElementById("spinOverlay");
+    const spinOverlayPreviewEl = document.getElementById("spinOverlayPreview");
+    const spinOverlayTitleEl = document.getElementById("spinOverlayTitle");
+    const spinOverlaySubtitleEl = document.getElementById("spinOverlaySubtitle");
+    const spinOverlayActionsEl = document.getElementById("spinOverlayActions");
+    const spinOverlayHangoutButtonEl = document.getElementById("spinOverlayHangoutButton");
+    const spinOverlayDismissButtonEl = document.getElementById("spinOverlayDismissButton");
+
+    let spinOverlayHideTimer = null;
+
+    const META_KEY = STORAGE_PREFIX + "meta";
+    const GARMENTS_KEY = STORAGE_PREFIX + "garments";
+    const RESIDENTS_KEY = STORAGE_PREFIX + "residents";
+    const PURCHASES_KEY = STORAGE_PREFIX + "purchases";
+
+    const DEFAULT_RESIDENTS = [
+      {
+        id: "npc_master",
+        type: "npc",
+        name: "マスター",
+        personality: "gentle",
+        preferredColors: ["#a78bfa", "#7dd3fc"],
+        currentGarmentId: null
+      },
+      {
+        id: "npc_sora",
+        type: "npc",
+        name: "ソラ",
+        personality: "sarcastic",
+        preferredColors: ["#fb923c", "#fde047"],
+        currentGarmentId: null
+      }
+    ];
+
+    const NPC_DIALOGUE_PROFILES = {
+      gentle: {
+        postPurchase: (name) => `「${name}」…服屋で見つけた。着てみるね。`,
+        stay: (name) => `「${name}」…このあたり、じっとしてた時間があるね。急がない一日の、痕跡みたいだ。`,
+        color: (name) => `この色、好きなんだ。「${name}」、着てみたら、なんだか落ち着く。`,
+        wearing: (name) => `…昨日、あなたの一日が、この服になったんだ。「${name}」、着てみたら落ち着く。`,
+        default: (dow, h) => {
+          if (h < 9) return `…${dow}曜の朝、落ち着いていいね。`;
+          if (h < 17) return `…${dow}曜日、のんびりしていこう。`;
+          return `…${dow}曜の夜。急がなくていいよ。`;
+        },
+        emptyShop: "…服屋、空っぽみたいだね。",
+        noUnsold: "…今日は、見るだけにしておく。また来るよ。",
+        replies: {
+          "似合ってるよ": { reply: "…うん。ありがとう。あなたの一日が、こうして誰かの上にある。", followUps: ["こちらこそ", "また話そう"] },
+          "どんなところが気に入った？": { reply: "色の流れかな。急がない一日の、余白みたいなところ。", followUps: ["いい色だね", "また話そう"] },
+          "うん、少し": { reply: "…それも、ちゃんと糸になる。待った時間も、服の一部だよ。", followUps: ["そうだね", "また話そう"] },
+          "その時間も糸になった": { reply: "…うん。じっとしてた分だけ、太い糸になる。それも一日。", followUps: ["そうだね", "また話そう"] },
+          "選んでくれてありがとう": { reply: "…こちらこそ。着られて、嬉しい。", followUps: ["こちらこそ", "また話そう"] },
+          "似合いそう": { reply: "…うん。着てみたら、なんだか落ち着く。", followUps: ["服屋で確認する", "また話そう"] },
+          "服屋で確認する": { action: "open_shop" },
+          "うん": { reply: "…また話そう。", followUps: [] }
+        },
+        followUps: {
+          "こちらこそ": "…うん。また、ここで会おう。",
+          "また話そう": "…うん。急がなくていいよ。",
+          "いい色だね": "…うん。この色、落ち着く。",
+          "そうだね": "…うん。その一日が、こうして残る。"
+        }
+      },
+      sarcastic: {
+        postPurchase: (name) => `「${name}」…服屋にあった。着るよ。…文句ある？`,
+        stay: (name) => `「${name}」…けっこう止まってたね。…別に褒めてない。止まった時間も、服にはなるんだろ。`,
+        color: (name) => `この色、悪くないじゃん。「${name}」、着ると妙に素直な気分になる。…気のせいかも。`,
+        wearing: (name) => `…あなたの一日が服になったって？ はは、まあそういうことにしておく。「${name}」、悪くないよ。`,
+        default: (dow, h) => {
+          if (h < 9) return `…${dow}曜の朝。用もないのに来てる。…俺もだけど。`;
+          if (h < 17) return `…${dow}曜日。のんびり日和。…別に一緒にのんびりしようって言ってない。`;
+          return `…${dow}曜の夜。急がなくていいよ、って誰が言った？ …まあ、急がなくていいけど。`;
+        },
+        emptyShop: "…服屋、空っぽ。静かな日もあるってことか。",
+        noUnsold: "…今日は見るだけ。また来る。…来るかもしれない。",
+        replies: {
+          "似合ってるよ": { reply: "…別に嬉しくなんかない。…うそ。ちょっと嬉しい。", followUps: ["そうかも", "また話そう"] },
+          "どんなところが気に入った？": { reply: "…色の流れが怠けてる感じがいい。褒めてるよ、たぶん。", followUps: ["そうだね", "また話そう"] },
+          "うん、少し": { reply: "…止まった時間も糸だって？ 変な話だけど、悪くない。", followUps: ["そうだね", "また話そう"] },
+          "その時間も糸になった": { reply: "…太い糸、好き。…別に趣味じゃない。ただ、残ってる。", followUps: ["そうだね", "また話そう"] },
+          "選んでくれてありがとう": { reply: "…こちらこそ、って言っとく。着てるから。", followUps: ["そうかも", "また話そう"] },
+          "似合いそう": { reply: "…着てみた。悪くない。…高評価だよ、俺基準で。", followUps: ["服屋で確認する", "また話そう"] },
+          "服屋で確認する": { action: "open_shop" },
+          "うん": { reply: "…また話そう。暇なら。", followUps: [] },
+          "そうかも": { reply: "…そうかも、か。はは。", followUps: [] }
+        },
+        followUps: {
+          "そうかも": "…まあ、そういうことにしておく。",
+          "また話そう": "…うん。また。暇なときに。",
+          "いい色だね": "…色は認める。服も、まあ悪くない。",
+          "そうだね": "…うん。その一日が、こうして残る。…悪くない。"
+        }
+      }
+    };
+
+    const FORBIDDEN_DIALOGUE_PATTERNS = [
+      /もっと歩/,
+      /無駄/,
+      /少ないね/,
+      /効率が悪/,
+      /失敗/,
+      /もったいない/,
+      /残念/
+    ];
+
+    let currentView = "thread";
+    let garments = [];
+    let residents = [];
+    let purchases = [];
+    let activeDialogue = null;
+    let activeNpcId = "npc_master";
+    let deferredInstallPrompt = null;
+
+    const keys = {};
+    let segments = [];
+    let nextSegmentSeq = 1;
+    let playerX = 0;
+    let playerY = 0;
+    let originLat = null;
+    let originLng = null;
+    let lastAccepted = null;
+    let lastSegmentEnd = null;
+    let stayAnchor = null;
+    let stayStartedAt = null;
+    let staySegmentEmitted = false;
+    let totalDistanceM = 0;
+    let inputMode = "idle";
+    let gpsWatchId = null;
+    const TIME_BAND_COLORS = {
+      morning: "#7dd3fc",
+      day: "#fde047",
+      evening: "#fb923c",
+      night: "#a78bfa"
+    };
+
+    const TIME_COLOR_STOPS = [
+      { min: 0, hex: TIME_BAND_COLORS.night },
+      { min: 5 * 60, hex: TIME_BAND_COLORS.morning },
+      { min: 9 * 60, hex: TIME_BAND_COLORS.day },
+      { min: 17 * 60, hex: TIME_BAND_COLORS.evening },
+      { min: 20 * 60, hex: TIME_BAND_COLORS.night },
+      { min: 24 * 60, hex: TIME_BAND_COLORS.night }
+    ];
+
+    let lastMoveSpeedMps = null;
+    let gpsAccuracyM = null;
+    let gpsRecentReadings = [];
+
+    function getLocalDateString(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    function getYesterdayDateString() {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return getLocalDateString(d);
+    }
+
+    function storageKey(suffix) {
+      return STORAGE_PREFIX + suffix + "_" + getLocalDateString();
+    }
+
+    function minutesOfDay(date = new Date()) {
+      return date.getHours() * 60 + date.getMinutes() + date.getSeconds() / 60;
+    }
+
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    function rgbToHex(r, g, b) {
+      const clamp = (v) => Math.max(0, Math.min(255, Math.round(v)));
+      return `#${[clamp(r), clamp(g), clamp(b)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+    }
+
+    function lerpRgb(hexA, hexB, t) {
+      const a = hexToRgb(hexA);
+      const b = hexToRgb(hexB);
+      const u = Math.max(0, Math.min(1, t));
+      return rgbToHex(
+        a.r + (b.r - a.r) * u,
+        a.g + (b.g - a.g) * u,
+        a.b + (b.b - a.b) * u
+      );
+    }
+
+    function getInterpolatedTimeColor(date = new Date()) {
+      const m = minutesOfDay(date);
+      for (let i = 0; i < TIME_COLOR_STOPS.length - 1; i++) {
+        const a = TIME_COLOR_STOPS[i];
+        const b = TIME_COLOR_STOPS[i + 1];
+        if (m >= a.min && m < b.min) {
+          const span = b.min - a.min || 1;
+          return lerpRgb(a.hex, b.hex, (m - a.min) / span);
+        }
+      }
+      return TIME_BAND_COLORS.night;
+    }
+
+    function getBandColorFromDate(date = new Date()) {
+      const h = date.getHours();
+      if (h >= 5 && h < 9) return TIME_BAND_COLORS.morning;
+      if (h >= 9 && h < 17) return TIME_BAND_COLORS.day;
+      if (h >= 17 && h < 20) return TIME_BAND_COLORS.evening;
+      return TIME_BAND_COLORS.night;
+    }
+
+    function applySpeedBrightness(hex, speedMps) {
+      if (speedMps === null || speedMps === undefined || Number.isNaN(speedMps)) return hex;
+      const minS = 0.5;
+      const maxS = 2.5;
+      const clamped = Math.max(minS, Math.min(maxS, speedMps));
+      const t = (clamped - minS) / (maxS - minS);
+      const factor = 0.72 + t * 0.28;
+      const { r, g, b } = hexToRgb(hex);
+      return rgbToHex(r * factor, g * factor, b * factor);
+    }
+
+    function getThreadDisplayColor(date = new Date(), speedMps = null) {
+      return applySpeedBrightness(getInterpolatedTimeColor(date), speedMps);
+    }
+
+    function getTimeBandColor(date = new Date()) {
+      return getBandColorFromDate(date);
+    }
+
+    function makeColorDemoSwatch(label, hex) {
+      const row = document.createElement("div");
+      row.className = "colorDemoSwatch";
+      const line = document.createElement("div");
+      line.className = "colorDemoLine";
+      line.style.background = hex;
+      line.style.boxShadow = `0 0 14px ${hex}55`;
+      const text = document.createElement("span");
+      text.textContent = `${label}  ${hex}`;
+      row.appendChild(line);
+      row.appendChild(text);
+      return row;
+    }
+
+    function showThreadColorDemo() {
+      switchView("thread");
+      colorDemoTimeSwatchesEl.innerHTML = "";
+      colorDemoSpeedSwatchesEl.innerHTML = "";
+
+      const today = getLocalDateString();
+      const timeSamples = [
+        ["0:00 夜", new Date(`${today}T00:00:00`)],
+        ["6:00 朝", new Date(`${today}T06:00:00`)],
+        ["8:30 朝↔昼", new Date(`${today}T08:30:00`)],
+        ["12:00 昼", new Date(`${today}T12:00:00`)],
+        ["18:00 夕", new Date(`${today}T18:00:00`)],
+        ["22:00 夜", new Date(`${today}T22:00:00`)]
+      ];
+      timeSamples.forEach(([label, date]) => {
+        colorDemoTimeSwatchesEl.appendChild(
+          makeColorDemoSwatch(label, getInterpolatedTimeColor(date))
+        );
+      });
+
+      const noon = new Date(`${today}T12:00:00`);
+      const baseNoon = getInterpolatedTimeColor(noon);
+      [
+        ["ゆっくり 0.6m/s", 0.6],
+        ["ふつう 1.2m/s", 1.2],
+        ["はやめ 2.2m/s", 2.2]
+      ].forEach(([label, speed]) => {
+        colorDemoSpeedSwatchesEl.appendChild(
+          makeColorDemoSwatch(label, getThreadDisplayColor(noon, speed))
+        );
+      });
+
+      colorDemoOverlayEl.hidden = false;
+      colorDemoOverlayEl.classList.add("visible");
+      messageEl.textContent = "色見本 — 実際の糸は GPS 散歩で差が出やすい";
+    }
+
+    function hideThreadColorDemo() {
+      colorDemoOverlayEl.classList.remove("visible");
+      colorDemoOverlayEl.hidden = true;
+    }
+
+    function segmentBandColor(seg) {
+      if (seg.bandColor) return seg.bandColor;
+      return getBandColorFromDate(new Date(seg.endedAt || seg.startedAt || Date.now()));
+    }
+
+    function getTimeBandName(date = new Date()) {
+      const h = date.getHours();
+      if (h >= 5 && h < 9) return "朝";
+      if (h >= 9 && h < 17) return "昼";
+      if (h >= 17 && h < 20) return "夕";
+      return "夜";
+    }
+
+    function calcMoveThickness(distanceM) {
+      return Math.min(8, 1 + Math.floor(distanceM / 100));
+    }
+
+    function calcStayThickness(staySec) {
+      return Math.min(8, 2 + Math.floor(staySec / 30));
+    }
+
+    function latLngToMeters(lat, lng) {
+      if (originLat === null || originLng === null) {
+        originLat = lat;
+        originLng = lng;
+        localStorage.setItem(storageKey("origin"), JSON.stringify({ lat, lng }));
+      }
+      const rad = Math.PI / 180;
+      const y = (lat - originLat) * 6371000 * rad;
+      const x = (lng - originLng) * 6371000 * Math.cos(originLat * rad) * rad;
+      return { x, y };
+    }
+
+    function getMinMoveSegmentM(source) {
+      if (source === "keyboard") return MIN_MOVE_SEGMENT_KEYBOARD_M;
+      const acc = gpsAccuracyM || 15;
+      return Math.max(MIN_MOVE_SEGMENT_M, acc * GPS_ACCURACY_MARGIN);
+    }
+
+    function gpsMinFilterM(accuracy) {
+      const acc = accuracy || gpsAccuracyM || 15;
+      return Math.max(MIN_FILTER_M, acc * GPS_ACCURACY_MARGIN);
+    }
+
+    function getGpsClusterCentroid() {
+      if (gpsRecentReadings.length < 4) return null;
+      let cx = 0;
+      let cy = 0;
+      gpsRecentReadings.forEach((p) => { cx += p.x; cy += p.y; });
+      return { x: cx / gpsRecentReadings.length, y: cy / gpsRecentReadings.length };
+    }
+
+    function isGpsLikelyStationary(x, y, speed, accuracy) {
+      if (speed !== null && !Number.isNaN(speed) && speed >= 0 && speed < GPS_MIN_WALK_SPEED) {
+        return true;
+      }
+
+      if (speed !== null && !Number.isNaN(speed) && speed >= GPS_MIN_WALK_SPEED) {
+        return false;
+      }
+
+      if (gpsRecentReadings.length < 4) return true;
+
+      let cx = 0;
+      let cy = 0;
+      gpsRecentReadings.forEach((p) => { cx += p.x; cy += p.y; });
+      cx /= gpsRecentReadings.length;
+      cy /= gpsRecentReadings.length;
+
+      let maxDist = 0;
+      gpsRecentReadings.forEach((p) => {
+        maxDist = Math.max(maxDist, distanceM(cx, cy, p.x, p.y));
+      });
+
+      const clusterLimit = Math.max(10, (accuracy || 15) * 1.8);
+      return maxDist < clusterLimit;
+    }
+
+    function snapPlayerToLastAccepted() {
+      if (!lastAccepted) return;
+      playerX = lastAccepted.x;
+      playerY = lastAccepted.y;
+    }
+
+    function processGpsPosition(x, y, lat, lng, recordedAt, speed, accuracy) {
+      gpsAccuracyM = accuracy || gpsAccuracyM;
+      const now = recordedAt.getTime();
+      const accLabel = gpsAccuracyM ? `±${Math.round(gpsAccuracyM)}m` : "取得中";
+
+      gpsRecentReadings.push({ x, y });
+      if (gpsRecentReadings.length > 12) gpsRecentReadings.shift();
+
+      if (speed !== null && !Number.isNaN(speed) && speed > MAX_SPEED_MPS) return;
+
+      if (!lastAccepted) {
+        processPosition(x, y, lat, lng, recordedAt, speed, "gps");
+        gpsStatusEl.textContent = `${accLabel} · 測位中`;
+        return;
+      }
+
+      if (gpsRecentReadings.length < GPS_WARMUP_READINGS) {
+        snapPlayerToLastAccepted();
+        maybeEmitStay(now);
+        gpsStatusEl.textContent = `${accLabel} · 測位中`;
+        updateBackground();
+        renderThreads();
+        return;
+      }
+
+      if (isGpsLikelyStationary(x, y, speed, accuracy)) {
+        snapPlayerToLastAccepted();
+        maybeEmitStay(now);
+        gpsStatusEl.textContent = `${accLabel} · 静止`;
+        updateBackground();
+        renderThreads();
+        return;
+      }
+
+      const minFilter = gpsMinFilterM(accuracy);
+      const dist = distanceM(lastAccepted.x, lastAccepted.y, x, y);
+
+      if (dist > minFilter * 2.5 && (speed === null || speed < GPS_MIN_WALK_SPEED)) {
+        snapPlayerToLastAccepted();
+        maybeEmitStay(now);
+        gpsStatusEl.textContent = `${accLabel} · 静止`;
+        updateBackground();
+        renderThreads();
+        return;
+      }
+
+      if (dist < minFilter) {
+        snapPlayerToLastAccepted();
+        maybeEmitStay(now);
+        updateBackground();
+        renderThreads();
+        return;
+      }
+
+      const centroid = getGpsClusterCentroid();
+      if (centroid) {
+        const shift = distanceM(lastAccepted.x, lastAccepted.y, centroid.x, centroid.y);
+        if (shift < minFilter * 0.75) {
+          snapPlayerToLastAccepted();
+          maybeEmitStay(now);
+          gpsStatusEl.textContent = `${accLabel} · 静止`;
+          updateBackground();
+          renderThreads();
+          return;
+        }
+      }
+
+      processPosition(x, y, lat, lng, recordedAt, speed, "gps");
+      gpsStatusEl.textContent = accLabel;
+    }
+
+    function distanceToNextThreadM() {
+      const segStart = lastSegmentEnd || lastAccepted;
+      if (!segStart) return getMinMoveSegmentM("keyboard");
+      return Math.max(0, getMinMoveSegmentM(inputMode === "keyboard" ? "keyboard" : "gps") - distanceM(segStart.x, segStart.y, playerX, playerY));
+    }
+
+    function activateKeyboardMode() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+        gpsButton.textContent = "GPS開始";
+      }
+      inputMode = "keyboard";
+      modeEl.textContent = "キーボード";
+      gpsStatusEl.textContent = "—";
+      messageEl.textContent = "WASD で歩けます。糸が増えるまで少し続けて";
+    }
+
+    function isTextInputFocused() {
+      const el = document.activeElement;
+      if (!el) return false;
+      const tag = el.tagName;
+      return tag === "TEXTAREA" || tag === "INPUT" || el.isContentEditable;
+    }
+
+    function isGameKey(key) {
+      return ["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key);
+    }
+
+    function storageKeyForDate(suffix, dateStr) {
+      return STORAGE_PREFIX + suffix + "_" + dateStr;
+    }
+
+    function hashString(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0).toString(16).slice(0, 6);
+    }
+
+    function segmentWeight(seg) {
+      if (seg.type === "stay") return Math.max(1, (seg.thickness || 2) * 10);
+      return Math.max(1, seg.distanceM || 1);
+    }
+
+    function collectBackupPayload() {
+      const data = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(STORAGE_PREFIX)) {
+          data[key] = localStorage.getItem(key);
+        }
+      }
+      return {
+        app: "ito",
+        version: BACKUP_FORMAT_VERSION,
+        exportedAt: new Date().toISOString(),
+        shellVersion: APP_SHELL_VERSION,
+        data
+      };
+    }
+
+    function backupEntriesFromPayload(payload) {
+      if (payload && payload.data && typeof payload.data === "object") {
+        return payload.data;
+      }
+      if (payload && typeof payload === "object") {
+        return payload;
+      }
+      throw new Error("バックアップ形式が読み取れません");
+    }
+
+    async function exportBackup() {
+      const payload = collectBackupPayload();
+      const keyCount = Object.keys(payload.data).length;
+      if (keyCount === 0) {
+        messageEl.textContent = "書き出す記録がありません";
+        return;
+      }
+
+      const json = JSON.stringify(payload, null, 2);
+      const filename = `ito-backup-${getLocalDateString()}.json`;
+
+      if (navigator.share) {
+        try {
+          const file = new File([json], filename, { type: "application/json" });
+          if (!navigator.canShare || navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file], title: "糸 記録" });
+            messageEl.textContent = `記録を書き出しました（${keyCount}件）`;
+            const meta = loadMeta();
+            meta.lastBackupAt = new Date().toISOString();
+            saveMeta(meta);
+            return;
+          }
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+        }
+      }
+
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      messageEl.textContent = `記録を書き出しました（${keyCount}件）`;
+      const meta = loadMeta();
+      meta.lastBackupAt = new Date().toISOString();
+      saveMeta(meta);
+    }
+
+    function importBackupText(jsonText) {
+      const payload = JSON.parse(jsonText);
+      const entries = backupEntriesFromPayload(payload);
+      let count = 0;
+
+      for (const [key, value] of Object.entries(entries)) {
+        if (!key.startsWith(STORAGE_PREFIX)) continue;
+        localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+        count++;
+      }
+
+      if (count === 0) {
+        throw new Error("糸の記録が見つかりませんでした");
+      }
+
+      return count;
+    }
+
+    async function importBackupFile(file) {
+      const text = await file.text();
+      const count = importBackupText(text);
+      messageEl.textContent = `記録を読み込みました（${count}件）。再起動します…`;
+      window.setTimeout(() => {
+        window.location.reload();
+      }, 600);
+    }
+
+    function loadGarments() {
+      return JSON.parse(localStorage.getItem(GARMENTS_KEY) || "[]");
+    }
+
+    function saveGarmentsList(list) {
+      garments = list;
+      localStorage.setItem(GARMENTS_KEY, JSON.stringify(list));
+      renderPersonalTestProgress();
+    }
+
+    function loadSegmentsForDate(dateStr) {
+      return JSON.parse(localStorage.getItem(storageKeyForDate("segments", dateStr)) || "[]");
+    }
+
+    function loadMeta() {
+      return JSON.parse(localStorage.getItem(META_KEY) || "{}");
+    }
+
+    function saveMeta(meta) {
+      localStorage.setItem(META_KEY, JSON.stringify(meta));
+    }
+
+    function recordRestDay(dateStr) {
+      const meta = loadMeta();
+      if (!meta.restDays) meta.restDays = [];
+      if (!meta.restDays.includes(dateStr)) {
+        meta.restDays.push(dateStr);
+        meta.restDays.sort((a, b) => b.localeCompare(a));
+      }
+      saveMeta(meta);
+    }
+
+    function getRestDays() {
+      const meta = loadMeta();
+      return (meta.restDays || []).slice().sort((a, b) => b.localeCompare(a));
+    }
+
+    function restDayMessage(dateStr) {
+      return `${formatDateLabel(dateStr)} は、糸が紡がれなかった日。それも一日。`;
+    }
+
+    function hideSpinOverlay() {
+      if (spinOverlayHideTimer) {
+        window.clearTimeout(spinOverlayHideTimer);
+        spinOverlayHideTimer = null;
+      }
+      spinOverlayEl.classList.remove("visible", "flash", "morning");
+      spinOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function showSpinOverlayContent({ previewMode, title, subtitle, morning }) {
+      if (spinOverlayHideTimer) {
+        window.clearTimeout(spinOverlayHideTimer);
+        spinOverlayHideTimer = null;
+      }
+
+      spinOverlayPreviewEl.className = previewMode === "rest" ? "restDay" : "";
+      spinOverlayPreviewEl.innerHTML = previewMode === "rest" ? "…" : "";
+      spinOverlayTitleEl.textContent = title;
+      spinOverlaySubtitleEl.textContent = subtitle || "";
+      spinOverlayEl.classList.remove("visible", "flash", "morning");
+      spinOverlayEl.setAttribute("aria-hidden", "false");
+      void spinOverlayEl.offsetWidth;
+      spinOverlayEl.classList.add("visible");
+      if (morning) spinOverlayEl.classList.add("morning");
+    }
+
+    function showSpinAnimation(garment) {
+      showSpinOverlayContent({
+        previewMode: "garment",
+        title: `「${ensureGarmentDisplayName(garment)}」が紡がれた`,
+        subtitle: "",
+        morning: false
+      });
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("width", "110");
+      svg.setAttribute("height", "150");
+      renderGarmentPreview(svg, garment);
+      spinOverlayPreviewEl.appendChild(svg);
+      spinOverlayEl.classList.add("flash");
+      spinOverlayHideTimer = window.setTimeout(hideSpinOverlay, 1800);
+    }
+
+    function showMorningSpinReveal(garment, spunDays) {
+      const name = ensureGarmentDisplayName(garment);
+      const labels = spunDays.map(formatDateLabel);
+      const subtitle = spunDays.length > 1
+        ? `${labels.join("、")} の糸が、それぞれ1着になった`
+        : "昨日の一日が、1着になった";
+
+      showSpinOverlayContent({
+        previewMode: "garment",
+        title: `「${name}」が紡がれた`,
+        subtitle,
+        morning: true
+      });
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("width", "110");
+      svg.setAttribute("height", "150");
+      renderGarmentPreview(svg, garment);
+      spinOverlayPreviewEl.appendChild(svg);
+      switchView("shop");
+      messageEl.textContent = "服屋で確かめて、たむろ場へ";
+    }
+
+    function showMorningRestReveal(restDays) {
+      const labels = restDays.map(formatDateLabel);
+      const title = restDays.length > 1 ? "静かな日が続いた" : "静かな一日";
+      const subtitle = restDays.length > 1
+        ? `${labels.join("、")} は、糸が紡がれなかった。それも一日。`
+        : `${labels[0]} は、糸が紡がれなかった日。それも一日。`;
+
+      showSpinOverlayContent({
+        previewMode: "rest",
+        title,
+        subtitle,
+        morning: true
+      });
+      switchView("shop");
+      messageEl.textContent = "静かな日も、そのまま一日";
+    }
+
+    function renderColorBreakdown(garment) {
+      const bar = document.createElement("div");
+      bar.className = "colorBreakdown";
+      Object.entries(garment.colorBreakdown || {})
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([color, ratio]) => {
+          const span = document.createElement("span");
+          span.style.width = `${Math.max(4, ratio * 100)}%`;
+          span.style.background = color;
+          span.title = `${colorName(color)} ${Math.round(ratio * 100)}%`;
+          bar.appendChild(span);
+        });
+      return bar;
+    }
+
+    function renderColorLabels(garment) {
+      const el = document.createElement("div");
+      el.className = "colorLabels";
+      const parts = Object.entries(garment.colorBreakdown || {})
+        .sort((a, b) => b[1] - a[1])
+        .map(([color, ratio]) => `${colorName(color)} ${Math.round(ratio * 100)}%`);
+      el.textContent = parts.join(" · ") || "";
+      return el;
+    }
+
+    function getTodayGarment() {
+      return loadGarments().find((g) => g.date === getLocalDateString()) || null;
+    }
+
+    function renderTodayPendingSection(container) {
+      const todayGarment = getTodayGarment();
+
+      // 服ができていて糸も片付いた → 「完成した服」だけ表示
+      if (todayGarment && segments.length === 0) return;
+
+      if (segments.length === 0 && !todayGarment) return;
+
+      const section = document.createElement("div");
+      section.className = "shopSection";
+      section.innerHTML = `<h3>${todayGarment ? "今日" : "紡ぎ待ち — 今日"}</h3>`;
+
+      const card = document.createElement("div");
+      card.className = todayGarment ? "shopPending shopSpunToday" : "shopPending";
+
+      if (todayGarment) {
+        const previewWrap = document.createElement("div");
+        previewWrap.className = "shopPendingPreview";
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 88 120");
+        svg.setAttribute("width", "56");
+        svg.setAttribute("height", "76");
+        renderGarmentPreview(svg, todayGarment);
+        previewWrap.appendChild(svg);
+
+        const text = document.createElement("div");
+        const name = ensureGarmentDisplayName(todayGarment);
+        if (segments.length > 0) {
+          text.innerHTML = `
+            <strong>${name}</strong> — 紡済み<br />
+            糸 ${segments.length} 本 / 移動 ${Math.round(totalDistanceM)} m がまだ増えています<br />
+            <span style="opacity:0.7">本番は 0:00 に確定。「0:00テスト」で試せます</span>
+          `;
+        } else {
+          text.innerHTML = `
+            <strong>${name}</strong> — 今日の服<br />
+            0:00 の紡ぎが完了しています
+          `;
+        }
+        text.appendChild(renderColorBreakdown(todayGarment));
+        text.appendChild(renderColorLabels(todayGarment));
+        card.appendChild(previewWrap);
+        card.appendChild(text);
+        section.appendChild(card);
+        container.appendChild(section);
+        return;
+      }
+
+      const previewGarment = generateGarment(getLocalDateString(), segments);
+      const previewWrap = document.createElement("div");
+      previewWrap.className = "shopPendingPreview";
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("width", "56");
+      svg.setAttribute("height", "76");
+      renderGarmentPreview(svg, previewGarment);
+      previewWrap.appendChild(svg);
+
+      const text = document.createElement("div");
+      text.innerHTML = `
+        糸 ${segments.length} 本 / 移動 ${Math.round(totalDistanceM)} m<br />
+        0:00 に自動で紡がれます<br />
+        <span style="opacity:0.7">プレビュー → 「今日を紡ぐ」</span>
+      `;
+      text.appendChild(renderColorBreakdown(previewGarment));
+      text.appendChild(renderColorLabels(previewGarment));
+
+      card.appendChild(previewWrap);
+      card.appendChild(text);
+      section.appendChild(card);
+      container.appendChild(section);
+    }
+
+    function renderRestDaySection(container) {
+      const restDays = getRestDays().slice(0, 5);
+      if (restDays.length === 0) return;
+
+      const section = document.createElement("div");
+      section.className = "shopSection";
+      section.innerHTML = `<h3>静かな日</h3>`;
+      restDays.forEach((dateStr) => {
+        const row = document.createElement("div");
+        row.className = "shopRestDay";
+        row.textContent = restDayMessage(dateStr);
+        section.appendChild(row);
+      });
+      container.appendChild(section);
+    }
+
+    function isStandaloneApp() {
+      return window.matchMedia("(display-mode: standalone)").matches
+        || window.navigator.standalone === true;
+    }
+
+    function isLanDevOrigin() {
+      const host = location.hostname;
+      return host === "localhost"
+        || /^127\./.test(host)
+        || /^192\.168\./.test(host)
+        || /^10\./.test(host)
+        || /^172\.(1[6-9]|2\d|3[0-1])\./.test(host);
+    }
+
+    function offlineLanHelpMessage() {
+      return "家のURL（192.168.x.x）ではSamsungでオフライン起動できません。"
+        + " 今は散歩前にアプリを開いたまま出かけてください。"
+        + " 恒久対策: 記録を書き出す → serve_outdoor.py のURLで読み込み → オフライン準備 → ホームに追加";
+    }
+
+    function getInstallGuideKey() {
+      const ua = navigator.userAgent;
+      if (/iPhone|iPad|iPod/.test(ua)) return "ios";
+      if (/SamsungBrowser/i.test(ua)) return "samsung";
+      if (/Android/.test(ua)) return "android";
+      return "desktop";
+    }
+
+    const INSTALL_GUIDES = {
+      ios: [
+        "画面下（または上）の **共有** ボタン（□に↑）をタップ",
+        "一覧から **「ホーム画面に追加」** を選ぶ",
+        "右上の **追加** をタップ"
+      ],
+      samsung: [
+        "右下の **≡ メニュー** をタップ",
+        " **ページを追加** → **ホーム画面** を選ぶ",
+        " **追加** をタップ",
+        "オフラインで開くときは **ホームのアイコン** から（ブラウザのURL欄では不可）"
+      ],
+      android: [
+        "右上の **⋮ メニュー** をタップ",
+        " **ホーム画面に追加** または **アプリをインストール** を選ぶ",
+        "表示されたら **追加** をタップ"
+      ],
+      desktop: [
+        "スマホで HTTPS の URL を開いてください",
+        "アドレスバー右の **インストール** アイコンが出る場合もあります",
+        "データは端末ごとに保存されます"
+      ]
+    };
+
+    function renderInstallSteps() {
+      const key = getInstallGuideKey();
+      installStepsEl.innerHTML = INSTALL_GUIDES[key]
+        .map((line) => `<li>${line.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")}</li>`)
+        .join("");
+      installModalPromptEl.hidden = !deferredInstallPrompt;
+    }
+
+    function openInstallGuide() {
+      renderInstallSteps();
+      installModalEl.hidden = false;
+      installModalEl.classList.add("visible");
+    }
+
+    function closeInstallGuide() {
+      installModalEl.classList.remove("visible");
+      installModalEl.hidden = true;
+    }
+
+    async function triggerInstallPrompt() {
+      if (!deferredInstallPrompt) {
+        openInstallGuide();
+        return;
+      }
+      deferredInstallPrompt.prompt();
+      const choice = await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      installBannerEl.classList.remove("visible");
+      installModalPromptEl.hidden = true;
+      closeInstallGuide();
+      if (choice.outcome === "accepted") {
+        messageEl.textContent = "ホーム画面に追加しました";
+        const meta = loadMeta();
+        meta.installDismissed = true;
+        saveMeta(meta);
+      }
+    }
+
+    function setupServiceWorkerUpdates() {
+      if (!("serviceWorker" in navigator) || !window.isSecureContext) return;
+
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
+      updateReloadButtonEl.addEventListener("click", () => {
+        const waiting = navigator.serviceWorker.controller
+          ? navigator.serviceWorker.controller
+          : null;
+        if (navigator.serviceWorker.controller && navigator.serviceWorker.ready) {
+          navigator.serviceWorker.ready.then((reg) => {
+            if (reg.waiting) {
+              reg.waiting.postMessage({ type: "SKIP_WAITING" });
+            } else {
+              window.location.reload();
+            }
+          });
+        } else {
+          window.location.reload();
+        }
+      });
+
+      function applyWaitingWorker(reg) {
+        if (reg.waiting) {
+          reg.waiting.postMessage({ type: "SKIP_WAITING" });
+        }
+      }
+
+      navigator.serviceWorker.register(`./sw.js?v=${APP_SHELL_VERSION}`, { updateViaCache: "none" }).then((reg) => {
+        reg.update();
+        applyWaitingWorker(reg);
+
+        if (reg.waiting) {
+          updateBannerEl.classList.add("visible");
+        }
+
+        reg.addEventListener("updatefound", () => {
+          const worker = reg.installing;
+          if (!worker) return;
+          worker.addEventListener("statechange", () => {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) {
+              updateBannerEl.classList.add("visible");
+              applyWaitingWorker(reg);
+            }
+          });
+        });
+      }).catch(() => {});
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState !== "visible") return;
+        navigator.serviceWorker.ready.then((reg) => {
+          reg.update().then(() => applyWaitingWorker(reg));
+        }).catch(() => {});
+      });
+    }
+
+    function setupInstallFlow() {
+      if (!window.isSecureContext) return;
+
+      if (isStandaloneApp()) {
+        document.body.classList.add("is-standalone");
+        return;
+      }
+
+      installHomeButtonEl.addEventListener("click", openInstallGuide);
+      installModalCloseEl.addEventListener("click", closeInstallGuide);
+      installModalPromptEl.addEventListener("click", triggerInstallPrompt);
+      installModalEl.addEventListener("click", (e) => {
+        if (e.target === installModalEl) closeInstallGuide();
+      });
+
+      installButtonEl.addEventListener("click", triggerInstallPrompt);
+
+      installDismissEl.addEventListener("click", () => {
+        installBannerEl.classList.remove("visible");
+        const meta = loadMeta();
+        meta.installDismissed = true;
+        saveMeta(meta);
+      });
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (!loadMeta().installDismissed) {
+          installBannerEl.classList.add("visible");
+        }
+        installBannerTextEl.textContent = "ホーム画面に追加できます";
+      });
+
+      if (!loadMeta().installDismissed && getInstallGuideKey() !== "desktop") {
+        window.setTimeout(() => {
+          if (!deferredInstallPrompt && !isStandaloneApp()) {
+            installBannerEl.classList.add("visible");
+            installBannerTextEl.textContent = "「ホームに追加」ボタンで手順を見られます";
+          }
+        }, 2500);
+      }
+    }
+
+    function clearDayStorage(dateStr) {
+      ["segments", "seq", "distance", "walk", "origin"].forEach((suffix) => {
+        localStorage.removeItem(storageKeyForDate(suffix, dateStr));
+      });
+    }
+
+    function generateGarment(dateStr, daySegments) {
+      const sorted = [...daySegments].sort((a, b) => a.startedAt.localeCompare(b.startedAt));
+      let totalWeight = 0;
+      const colorWeights = {};
+      let totalDistance = 0;
+      let totalStayMs = 0;
+
+      sorted.forEach((seg) => {
+        const w = segmentWeight(seg);
+        const band = segmentBandColor(seg);
+        totalWeight += w;
+        colorWeights[band] = (colorWeights[band] || 0) + w;
+        totalDistance += seg.distanceM || 0;
+        if (seg.type === "stay") totalStayMs += seg.durationMs || 0;
+      });
+
+      const colorBreakdown = {};
+      Object.entries(colorWeights).forEach(([color, w]) => {
+        colorBreakdown[color] = w / totalWeight;
+      });
+
+      let dominantColor = sorted[0].color;
+      let maxRatio = 0;
+      Object.entries(colorBreakdown).forEach(([color, ratio]) => {
+        if (ratio > maxRatio) {
+          maxRatio = ratio;
+          dominantColor = color;
+        }
+      });
+
+      const garment = {
+        id: `garment_${dateStr}`,
+        date: dateStr,
+        spunAt: new Date().toISOString(),
+        dominantColor,
+        colorBreakdown,
+        totalDistanceM: Math.round(totalDistance),
+        totalStayMin: Math.round(totalStayMs / 60000),
+        segmentCount: sorted.length,
+        patternSeed: hashString(dateStr + sorted.map((s) => s.id).join("")),
+        displayName: null,
+        stripes: sorted.map((seg) => ({
+          color: segmentBandColor(seg),
+          weight: segmentWeight(seg) / totalWeight
+        }))
+      };
+      garment.displayName = suggestGarmentName(garment);
+      return garment;
+    }
+
+    function spinDay(dateStr, daySegments, options = {}) {
+      if (daySegments.length === 0) return null;
+      const existing = loadGarments().find((g) => g.date === dateStr);
+      const garment = generateGarment(dateStr, daySegments);
+      if (options.preserveName && existing?.displayName) {
+        garment.displayName = existing.displayName;
+      }
+      const list = loadGarments().filter((g) => g.date !== dateStr);
+      list.push(garment);
+      saveGarmentsList(list);
+      clearDayStorage(dateStr);
+      return garment;
+    }
+
+    function checkAndSpinPastDays() {
+      const today = getLocalDateString();
+      const existing = loadGarments();
+      const spunDates = new Set(existing.map((g) => g.date));
+      const spunDays = [];
+      const restDays = [];
+      const keysToProcess = [];
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const prefix = STORAGE_PREFIX + "segments_";
+        if (!key || !key.startsWith(prefix)) continue;
+        keysToProcess.push(key.slice(prefix.length));
+      }
+
+      keysToProcess.forEach((dateStr) => {
+        if (dateStr >= today) return;
+        if (spunDates.has(dateStr)) {
+          clearDayStorage(dateStr);
+          return;
+        }
+        const segs = loadSegmentsForDate(dateStr);
+        if (segs.length > 0) {
+          spinDay(dateStr, segs);
+          spunDays.push(dateStr);
+        } else {
+          recordRestDay(dateStr);
+          restDays.push(dateStr);
+          clearDayStorage(dateStr);
+        }
+      });
+
+      const yesterday = getYesterdayDateString();
+      const meta = loadMeta();
+      const knownRest = new Set(meta.restDays || []);
+      if (
+        yesterday < today
+        && !spunDays.includes(yesterday)
+        && !restDays.includes(yesterday)
+        && !spunDates.has(yesterday)
+        && !knownRest.has(yesterday)
+        && loadSegmentsForDate(yesterday).length === 0
+      ) {
+        recordRestDay(yesterday);
+        restDays.push(yesterday);
+        clearDayStorage(yesterday);
+      }
+
+      saveGarmentsList(loadGarments());
+      return { spunDays, restDays };
+    }
+
+    function seedConversationTest() {
+      const today = getLocalDateString();
+      const endedAt = new Date();
+      const segs = [
+        {
+          id: "thread_test_move",
+          date: today,
+          type: "move",
+          from: { x: 0, y: 0, lat: null, lng: null },
+          to: { x: 48, y: 0, lat: null, lng: null },
+          distanceM: 48,
+          durationMs: 8000,
+            color: "#fde047",
+            bandColor: TIME_BAND_COLORS.day,
+            thickness: 2,
+          startedAt: new Date(endedAt.getTime() - 8000).toISOString(),
+          endedAt: endedAt.toISOString()
+        },
+        {
+          id: "thread_test_stay",
+          date: today,
+          type: "stay",
+          from: { x: 48, y: 0, lat: null, lng: null },
+          to: { x: 48, y: 0, lat: null, lng: null },
+          distanceM: 0,
+          durationMs: 150000,
+            color: "#a78bfa",
+            bandColor: TIME_BAND_COLORS.night,
+            thickness: 4,
+          startedAt: new Date(endedAt.getTime() - 150000).toISOString(),
+          endedAt: endedAt.toISOString()
+        }
+      ];
+      spinDay(today, segs, { preserveName: false });
+
+      savePurchases([]);
+      const list = loadResidents();
+      list.forEach((r) => {
+        if (r.type === "npc") r.currentGarmentId = null;
+      });
+      saveResidents(list);
+      garments = loadGarments();
+      purchases = [];
+      residents = loadResidents();
+      renderShop();
+      renderHangout();
+      switchView("hangout");
+      showDialogueLine({ speaker: "—", text: "NPCをタップして選び、「服屋を見てもらう」→ 会話を試せます。" });
+      dialogueChoicesEl.innerHTML = "";
+      messageEl.textContent = "会話テスト — 滞在の糸が多い服を用意しました";
+    }
+
+    function spinTodayTest() {
+      if (segments.length === 0) {
+        messageEl.textContent = "今日はまだ糸がありません。雨の日は WASD でも試せます";
+        return;
+      }
+      const today = getLocalDateString();
+      const existing = getTodayGarment();
+      if (existing) {
+        const name = ensureGarmentDisplayName(existing);
+        if (!confirm(`「${name}」を、いまの糸で更新しますか？\n（名前はそのまま残ります）`)) return;
+      }
+      const wasUpdate = !!existing;
+      const garment = spinDay(today, [...segments], { preserveName: true });
+      if (!garment) return;
+      loadState();
+      garments = loadGarments();
+      showSpinAnimation(garment);
+      renderShop();
+      switchView("shop");
+      messageEl.textContent = wasUpdate
+        ? `「${garment.displayName}」を、いまの糸で更新しました`
+        : `「${garment.displayName}」が、1着の服になりました`;
+    }
+
+    function clearTodayInMemory() {
+      segments = [];
+      nextSegmentSeq = 1;
+      totalDistanceM = 0;
+      originLat = null;
+      originLng = null;
+      lastAccepted = null;
+      lastSegmentEnd = null;
+      stayAnchor = null;
+      stayStartedAt = null;
+      staySegmentEmitted = false;
+      playerX = 0;
+      playerY = 0;
+      gpsRecentReadings = [];
+    }
+
+    function simulateMidnightSpin() {
+      const today = getLocalDateString();
+      const existing = getTodayGarment();
+
+      if (segments.length === 0) {
+        if (!existing) {
+          recordRestDay(today);
+          messageEl.textContent = "静かな一日の夜。服は紡がれなかった";
+        } else {
+          messageEl.textContent = `「${ensureGarmentDisplayName(existing)}」— 今日はここまで`;
+        }
+        renderShop();
+        switchView("shop");
+        return;
+      }
+
+      if (existing) {
+        const name = ensureGarmentDisplayName(existing);
+        if (!confirm(`0:00 — 「${name}」を確定して、今日の糸を片付けますか？\n（本番と同じ動きです）`)) return;
+      }
+
+      const garment = spinDay(today, [...segments], { preserveName: true });
+      if (!garment) return;
+      clearTodayInMemory();
+      localStorage.removeItem(storageKey("segments"));
+      localStorage.removeItem(storageKey("seq"));
+      localStorage.removeItem(storageKey("distance"));
+      localStorage.removeItem(storageKey("origin"));
+      localStorage.removeItem(storageKey("walk"));
+      garments = loadGarments();
+      showSpinAnimation(garment);
+      updateHud();
+      updateBackground();
+      renderThreads();
+      renderShop();
+      switchView("shop");
+      messageEl.textContent = `0:00 — 「${garment.displayName}」が紡がれた`;
+    }
+
+    function formatDateLabel(dateStr) {
+      const [y, m, d] = dateStr.split("-");
+      return `${Number(m)}/${Number(d)}`;
+    }
+
+    function colorName(hex) {
+      const map = {
+        "#7dd3fc": "朝",
+        "#fde047": "昼",
+        "#fb923c": "夕",
+        "#a78bfa": "夜"
+      };
+      return map[hex] || "糸";
+    }
+
+    function suggestGarmentName(garment) {
+      const time = colorName(garment.dominantColor);
+      const seed = parseInt(garment.patternSeed, 16) || 0;
+      const shapes = ["服", "上着", "コート", "一点"];
+      const shape = shapes[seed % shapes.length];
+
+      if (garment.totalStayMin >= 3 && garment.totalDistanceM < 80) {
+        return `${time}の間`;
+      }
+      if (garment.totalDistanceM >= 200) {
+        return `${time}の長${shape}`;
+      }
+      if (garment.segmentCount >= 15) {
+        return `${time}の糸${shape}`;
+      }
+      return `${time}の${shape}`;
+    }
+
+    function ensureGarmentDisplayName(garment) {
+      if (garment.displayName) return garment.displayName;
+      return suggestGarmentName(garment);
+    }
+
+    function renameGarment(dateStr) {
+      const list = loadGarments();
+      const garment = list.find((g) => g.date === dateStr);
+      if (!garment) return;
+
+      const current = ensureGarmentDisplayName(garment);
+      const next = window.prompt("服の名前（空欄で自動名に戻す）", current);
+      if (next === null) return;
+
+      garment.displayName = next.trim() || suggestGarmentName(garment);
+      saveGarmentsList(list);
+      garments = list;
+      renderShop();
+      messageEl.textContent = garment.displayName
+        ? `「${garment.displayName}」に名前を付けました`
+        : "名前を付けました";
+    }
+
+    function backfillGarmentNames() {
+      const list = loadGarments();
+      let changed = false;
+      list.forEach((garment) => {
+        if (!garment.displayName) {
+          garment.displayName = suggestGarmentName(garment);
+          changed = true;
+        }
+      });
+      if (changed) saveGarmentsList(list);
+      return list;
+    }
+
+    function loadResidents() {
+      return JSON.parse(localStorage.getItem(RESIDENTS_KEY) || "null") || DEFAULT_RESIDENTS.map((r) => ({ ...r }));
+    }
+
+    function saveResidents(list) {
+      residents = list;
+      localStorage.setItem(RESIDENTS_KEY, JSON.stringify(list));
+    }
+
+    function loadPurchases() {
+      return JSON.parse(localStorage.getItem(PURCHASES_KEY) || "[]");
+    }
+
+    function savePurchases(list) {
+      purchases = list;
+      localStorage.setItem(PURCHASES_KEY, JSON.stringify(list));
+    }
+
+    function getGarmentById(garmentId) {
+      if (!garmentId) return null;
+      return loadGarments().find((g) => g.id === garmentId) || null;
+    }
+
+    function getUnpurchasedGarments() {
+      const purchasedIds = new Set(loadPurchases().map((p) => p.garmentId));
+      return loadGarments().filter((g) => !purchasedIds.has(g.id));
+    }
+
+    function getGarmentShopStatus(garment) {
+      const purchase = loadPurchases().find((p) => p.garmentId === garment.id);
+      if (!purchase) {
+        return { label: "未購入", className: "garmentStatusUnsold" };
+      }
+      const wearer = loadResidents().find((r) => r.currentGarmentId === garment.id);
+      if (wearer) {
+        return { label: `${wearer.name}が着用中`, className: "garmentStatusWorn" };
+      }
+      return { label: "購入済", className: "garmentStatusSold" };
+    }
+
+    function getDayOfWeekName(date = new Date()) {
+      return ["日", "月", "火", "水", "木", "金", "土"][date.getDay()];
+    }
+
+    function getSeasonalDefaultDialogue(npc) {
+      const profile = getNpcProfile(npc);
+      const dow = getDayOfWeekName();
+      const h = new Date().getHours();
+      return {
+        id: "default",
+        lines: [{ speaker: npc.name, text: profile.default(dow, h) }],
+        choices: npc.personality === "sarcastic" ? ["うん", "そうかも"] : ["うん"]
+      };
+    }
+
+    function getPostPurchaseDialogue(npc, garment) {
+      const name = ensureGarmentDisplayName(garment);
+      const profile = getNpcProfile(npc);
+      return {
+        id: "purchase",
+        lines: [{ speaker: npc.name, text: profile.postPurchase(name) }],
+        choices: ["似合いそう", "服屋で確認する"]
+      };
+    }
+
+    function getDialogueForNpc(npc, garmentOverride = null) {
+      const garment = garmentOverride || getGarmentById(npc.currentGarmentId);
+      const profile = getNpcProfile(npc);
+      if (!garment) {
+        return getSeasonalDefaultDialogue(npc);
+      }
+
+      const name = ensureGarmentDisplayName(garment);
+      if (garment.totalStayMin >= 2) {
+        return {
+          id: "stay",
+          lines: [{ speaker: npc.name, text: profile.stay(name) }],
+          choices: ["うん、少し", "その時間も糸になった"]
+        };
+      }
+      if (npc.preferredColors.includes(garment.dominantColor)) {
+        return {
+          id: "color",
+          lines: [{ speaker: npc.name, text: profile.color(name) }],
+          choices: ["選んでくれてありがとう", "似合ってるよ"]
+        };
+      }
+      return {
+        id: "wearing",
+        lines: [{ speaker: npc.name, text: profile.wearing(name) }],
+        choices: ["似合ってるよ", "どんなところが気に入った？"]
+      };
+    }
+
+    function showDialogueLine(line) {
+      dialogueSpeakerEl.textContent = line.speaker;
+      dialogueTextEl.textContent = line.text;
+      dialogueChoicesEl.innerHTML = "";
+    }
+
+    function showDialogueChoices(choices, phase = "opening", npc = null) {
+      const speakerNpc = npc || getActiveNpc();
+      if (!speakerNpc) return;
+      const profile = getNpcProfile(speakerNpc);
+      dialogueChoicesEl.innerHTML = "";
+      choices.forEach((label) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = label;
+        btn.addEventListener("click", () => {
+          if (phase === "opening") {
+            const config = profile.replies[label];
+            if (!config) return;
+            if (config.action === "open_shop") {
+              switchView("shop");
+              messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
+              dialogueChoicesEl.innerHTML = "";
+              return;
+            }
+            showDialogueLine({ speaker: speakerNpc.name, text: config.reply });
+            if (config.followUps && config.followUps.length > 0) {
+              showDialogueChoices(config.followUps, "followUp", speakerNpc);
+            } else {
+              dialogueChoicesEl.innerHTML = "";
+            }
+            return;
+          }
+
+          const closing = profile.followUps[label];
+          if (closing) {
+            showDialogueLine({ speaker: speakerNpc.name, text: closing });
+          }
+          if (label === "服屋で確認する") {
+            switchView("shop");
+            messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
+          }
+          dialogueChoicesEl.innerHTML = "";
+        });
+        dialogueChoicesEl.appendChild(btn);
+      });
+    }
+
+    function startHangoutDialogue(options = {}) {
+      const npc = options.npcId
+        ? loadResidents().find((r) => r.id === options.npcId)
+        : getActiveNpc();
+      if (!npc) return;
+      activeNpcId = npc.id;
+      const garment = getGarmentById(npc.currentGarmentId);
+      activeDialogue = options.afterPurchase && garment
+        ? getPostPurchaseDialogue(npc, garment)
+        : getDialogueForNpc(npc);
+      showDialogueLine(activeDialogue.lines[0]);
+      showDialogueChoices(activeDialogue.choices, "opening", npc);
+    }
+
+    function renderNpcCard(npc) {
+      const garment = getGarmentById(npc.currentGarmentId);
+      const card = document.createElement("button");
+      card.type = "button";
+      card.className = `npcCard${npc.id === activeNpcId ? " active" : ""}`;
+      card.addEventListener("click", () => setActiveNpc(npc.id));
+
+      const personality = getNpcPersonalityLabel(npc);
+      if (personality) {
+        const tag = document.createElement("div");
+        tag.className = "npcCardPersonality";
+        tag.textContent = personality;
+        card.appendChild(tag);
+      }
+
+      const preview = document.createElement("div");
+      preview.className = "npcGarmentPreview";
+      if (!garment) {
+        preview.style.background = "rgba(255,255,255,0.06)";
+      } else {
+        preview.style.background = "transparent";
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 88 120");
+        svg.setAttribute("width", "72");
+        svg.setAttribute("height", "98");
+        renderGarmentPreview(svg, garment);
+        preview.appendChild(svg);
+      }
+      card.appendChild(preview);
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "npcName";
+      nameEl.textContent = npc.name;
+      card.appendChild(nameEl);
+
+      const wearingEl = document.createElement("div");
+      wearingEl.className = "npcWearing";
+      if (!garment) {
+        wearingEl.textContent = "まだ服を選んでいない";
+      } else {
+        const purchase = loadPurchases().find((p) => p.garmentId === garment.id);
+        wearingEl.textContent = purchase
+          ? `「${ensureGarmentDisplayName(garment)}」（服屋で選んだ）`
+          : `「${ensureGarmentDisplayName(garment)}」`;
+      }
+      card.appendChild(wearingEl);
+
+      return card;
+    }
+
+    function renderHangout() {
+      residents = loadResidents();
+      purchases = loadPurchases();
+      const npcs = residents.filter((r) => r.type === "npc");
+      if (!npcs.find((n) => n.id === activeNpcId)) {
+        activeNpcId = npcs[0]?.id || "npc_master";
+      }
+
+      hangoutNpcListEl.innerHTML = "";
+      npcs.forEach((npc) => {
+        hangoutNpcListEl.appendChild(renderNpcCard(npc));
+      });
+
+      const activeNpc = getActiveNpc();
+      const allGarments = loadGarments();
+      const unpurchased = getUnpurchasedGarments();
+      const garmentCount = allGarments.length;
+      const unpurchasedCount = unpurchased.length;
+      const anyWearing = npcs.some((n) => n.currentGarmentId);
+
+      if (garmentCount === 0) {
+        hangoutIntroEl.textContent = "服屋に服が並ぶと、誰かが選びに来るかもしれない。";
+      } else if (anyWearing) {
+        hangoutIntroEl.textContent = unpurchasedCount > 0
+          ? `あなたの一日が、誰かの姿になっている。服屋に未購入 ${unpurchasedCount} 着。`
+          : "あなたの一日が、誰かの姿になっている。服屋の服は、すべて選ばれた。";
+      } else if (unpurchasedCount > 0) {
+        hangoutIntroEl.textContent = `服屋に未購入 ${unpurchasedCount} 着。誰かが選ぶのを待っている。`;
+      } else {
+        hangoutIntroEl.textContent = "服屋の服は、すべて選ばれた。また新しい服が並ぶのを待っている。";
+      }
+
+      if (activeNpc) {
+        hangoutTalkButtonEl.textContent = `${activeNpc.name}に話しかける`;
+      }
+
+      if (garmentCount === 0) {
+        hangoutBrowseButtonEl.disabled = true;
+        hangoutBrowseButtonEl.textContent = "服屋を見てもらう";
+      } else if (unpurchasedCount === 0) {
+        hangoutBrowseButtonEl.disabled = true;
+        hangoutBrowseButtonEl.textContent = "服屋は見ただけ（未購入なし）";
+      } else if (activeNpc) {
+        hangoutBrowseButtonEl.disabled = false;
+        hangoutBrowseButtonEl.textContent = `${activeNpc.name}に服屋を見てもらう（未購入 ${unpurchasedCount} 着）`;
+      }
+    }
+
+    function browseGarmentsWithNpc() {
+      const npc = getActiveNpc();
+      if (!npc) return;
+      const profile = getNpcProfile(npc);
+      const unpurchased = getUnpurchasedGarments();
+      if (loadGarments().length === 0) {
+        messageEl.textContent = "服屋に服がまだありません";
+        showDialogueLine({ speaker: npc.name, text: profile.emptyShop });
+        dialogueChoicesEl.innerHTML = "";
+        return;
+      }
+      if (unpurchased.length === 0) {
+        messageEl.textContent = "未購入の服はありません";
+        showDialogueLine({ speaker: npc.name, text: profile.noUnsold });
+        dialogueChoicesEl.innerHTML = "";
+        renderHangout();
+        return;
+      }
+
+      const result = tryNpcPurchase(npc.id);
+      renderHangout();
+      renderShop();
+      if (result) {
+        const name = ensureGarmentDisplayName(result.garment);
+        messageEl.textContent = `${npc.name}が「${name}」を選んだ — 服屋で「着用中」を確認`;
+        startHangoutDialogue({ afterPurchase: true, npcId: npc.id });
+      } else {
+        messageEl.textContent = "今日は、新しい服は選ばれなかった";
+        showDialogueLine({ speaker: npc.name, text: profile.noUnsold });
+        dialogueChoicesEl.innerHTML = "";
+      }
+    }
+
+    function syncNpcGarmentState() {
+      const purchaseList = loadPurchases();
+      const purchasedIds = new Set(purchaseList.map((p) => p.garmentId));
+      const list = loadResidents();
+      let changed = false;
+
+      list.forEach((resident) => {
+        if (resident.type !== "npc" || !resident.currentGarmentId) return;
+        if (!purchasedIds.has(resident.currentGarmentId) || !getGarmentById(resident.currentGarmentId)) {
+          resident.currentGarmentId = null;
+          changed = true;
+        }
+      });
+
+      if (changed) saveResidents(list);
+      return changed;
+    }
+
+    function resetPurchases() {
+      if (!confirm("購入履歴を消しますか？\nNPCの着用も外れ、服屋の未購入表示が戻ります。")) return;
+      savePurchases([]);
+      const list = loadResidents();
+      list.forEach((r) => {
+        if (r.type === "npc") r.currentGarmentId = null;
+      });
+      saveResidents(list);
+      const meta = loadMeta();
+      delete meta.lastNpcShopDate;
+      saveMeta(meta);
+      purchases = [];
+      residents = list;
+      renderShop();
+      renderHangout();
+      messageEl.textContent = "購入履歴をリセットしました";
+    }
+
+    function scoreGarmentForNpc(garment, npc) {
+      let score = Math.random() * 0.35;
+      const breakdown = garment.colorBreakdown || {};
+      npc.preferredColors.forEach((color) => {
+        score += (breakdown[color] || 0) * 2;
+      });
+      if (npc.preferredColors.includes(garment.dominantColor)) {
+        score += 0.45;
+      }
+      return score;
+    }
+
+    function tryNpcPurchase(npcId = "npc_master") {
+      const allGarments = loadGarments();
+      if (allGarments.length === 0) return null;
+
+      const purchaseList = loadPurchases();
+      const purchasedIds = new Set(purchaseList.map((p) => p.garmentId));
+      const candidates = allGarments.filter((g) => !purchasedIds.has(g.id));
+      if (candidates.length === 0) return null;
+
+      const residentList = loadResidents();
+      const npc = residentList.find((r) => r.id === npcId);
+      if (!npc) return null;
+
+      let best = candidates[0];
+      let bestScore = -1;
+      candidates.forEach((garment) => {
+        const score = scoreGarmentForNpc(garment, npc);
+        if (score > bestScore) {
+          bestScore = score;
+          best = garment;
+        }
+      });
+
+      const purchase = {
+        id: `purchase_${Date.now()}`,
+        garmentId: best.id,
+        buyerId: npcId,
+        buyerType: "npc",
+        purchasedAt: new Date().toISOString()
+      };
+      purchaseList.push(purchase);
+      savePurchases(purchaseList);
+      npc.currentGarmentId = best.id;
+      saveResidents(residentList);
+
+      return { npc, garment: best, purchase };
+    }
+
+    function getNpcProfile(npc) {
+      return NPC_DIALOGUE_PROFILES[npc.personality || "gentle"];
+    }
+
+    function getNpcPersonalityLabel(npc) {
+      if (npc.personality === "sarcastic") return "皮肉屋";
+      return "";
+    }
+
+    function ensureResidents() {
+      const defaults = DEFAULT_RESIDENTS.map((r) => ({ ...r }));
+      const stored = JSON.parse(localStorage.getItem(RESIDENTS_KEY) || "null");
+      if (!stored) {
+        saveResidents(defaults);
+        return;
+      }
+      let changed = false;
+      const ids = new Set(stored.map((r) => r.id));
+      defaults.forEach((def) => {
+        if (!ids.has(def.id)) {
+          stored.push({ ...def });
+          changed = true;
+        }
+      });
+      stored.forEach((resident) => {
+        const def = defaults.find((d) => d.id === resident.id);
+        if (!def) return;
+        if (!resident.personality && def.personality) {
+          resident.personality = def.personality;
+          changed = true;
+        }
+        if (!resident.preferredColors && def.preferredColors) {
+          resident.preferredColors = [...def.preferredColors];
+          changed = true;
+        }
+      });
+      if (changed) saveResidents(stored);
+    }
+
+    function getActiveNpc() {
+      const list = loadResidents().filter((r) => r.type === "npc");
+      return list.find((r) => r.id === activeNpcId) || list[0] || null;
+    }
+
+    function setActiveNpc(npcId) {
+      activeNpcId = npcId;
+      renderHangout();
+    }
+
+    function collectDialogueStrings() {
+      const texts = [];
+      DEFAULT_RESIDENTS.forEach((npc) => {
+        const profile = getNpcProfile(npc);
+        Object.values(profile.replies).forEach((entry) => {
+          if (entry.reply) texts.push(entry.reply);
+        });
+        Object.values(profile.followUps).forEach((text) => texts.push(text));
+        const h = 12;
+        texts.push(profile.default("月", h));
+        const baseGarment = {
+          id: "sample",
+          date: "2026-01-01",
+          dominantColor: "#fde047",
+          colorBreakdown: { "#fde047": 1 },
+          totalStayMin: 0,
+          totalDistanceM: 100,
+          segmentCount: 5,
+          patternSeed: "0",
+          displayName: "試しの服",
+          stripes: [{ color: "#fde047", weight: 1 }]
+        };
+        const wearingNpc = { ...npc, currentGarmentId: "sample" };
+        texts.push(getDialogueForNpc(wearingNpc, { ...baseGarment, totalStayMin: 5 }).lines[0].text);
+        texts.push(getDialogueForNpc(wearingNpc, { ...baseGarment, dominantColor: "#a78bfa" }).lines[0].text);
+        texts.push(getDialogueForNpc(wearingNpc, baseGarment).lines[0].text);
+        texts.push(getPostPurchaseDialogue(wearingNpc, baseGarment).lines[0].text);
+      });
+      return texts;
+    }
+
+    function validateDialogueTone() {
+      const violations = [];
+      collectDialogueStrings().forEach((text) => {
+        FORBIDDEN_DIALOGUE_PATTERNS.forEach((pattern) => {
+          if (pattern.test(text)) {
+            violations.push({ text, pattern: pattern.source });
+          }
+        });
+      });
+      if (violations.length > 0) {
+        console.warn("[糸] 禁止台詞の可能性:", violations);
+      }
+      return violations.length === 0;
+    }
+
+    function renderGarmentPreview(svg, garment) {
+      svg.innerHTML = "";
+      const w = 88;
+      const h = 120;
+      let y = 0;
+      garment.stripes.forEach((stripe) => {
+        const sh = Math.max(2, stripe.weight * h);
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 0);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", w);
+        rect.setAttribute("height", sh);
+        rect.setAttribute("fill", stripe.color);
+        svg.appendChild(rect);
+        y += sh;
+      });
+      if (y < h) {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 0);
+        rect.setAttribute("y", y);
+        rect.setAttribute("width", w);
+        rect.setAttribute("height", h - y);
+        rect.setAttribute("fill", garment.dominantColor);
+        rect.setAttribute("opacity", "0.5");
+        svg.appendChild(rect);
+      }
+    }
+
+    function renderShop() {
+      garments = loadGarments().sort((a, b) => b.date.localeCompare(a.date));
+      garmentListEl.innerHTML = "";
+
+      renderTodayPendingSection(garmentListEl);
+
+      if (garments.length === 0 && segments.length === 0) {
+        renderRestDaySection(garmentListEl);
+        const empty = document.createElement("div");
+        empty.className = "garmentEmpty";
+        empty.innerHTML = "まだ服がありません。<br>糸を集めて「今日を紡ぐ」を試すか、0:00 まで待ってみて。";
+        garmentListEl.appendChild(empty);
+        shopIntroEl.textContent = "0:00 に昨日の糸が1着になる。ここに並ぶ服は、あなたの一日そのもの。";
+        return;
+      }
+
+      if (garments.length === 0) {
+        renderRestDaySection(garmentListEl);
+        shopIntroEl.textContent = "今日の糸が溜まっています。0:00 まで待つか「今日を紡ぐ」";
+        return;
+      }
+
+      const unpurchasedCount = getUnpurchasedGarments().length;
+      shopIntroEl.textContent = unpurchasedCount > 0
+        ? `${garments.length} 着の服が並んでいます。未購入 ${unpurchasedCount} 着。`
+        : `${garments.length} 着の服が並んでいます。すべて購入済。`;
+      renderRestDaySection(garmentListEl);
+
+      const section = document.createElement("div");
+      section.className = "shopSection";
+      section.innerHTML = `<h3>完成した服</h3>`;
+
+      garments.forEach((garment) => {
+        const card = document.createElement("div");
+        card.className = "garmentCard";
+        const isToday = garment.date === getLocalDateString();
+
+        const previewWrap = document.createElement("div");
+        previewWrap.className = "garmentPreview";
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("viewBox", "0 0 88 120");
+        svg.setAttribute("width", "88");
+        svg.setAttribute("height", "120");
+        renderGarmentPreview(svg, garment);
+        previewWrap.appendChild(svg);
+
+        const meta = document.createElement("div");
+        meta.className = "garmentMeta";
+        const topColor = colorName(garment.dominantColor);
+        const displayName = ensureGarmentDisplayName(garment);
+        meta.innerHTML = `
+          <strong class="garmentName" title="タップで名前を変更">${displayName}</strong>
+          <span class="garmentNameHint">${formatDateLabel(garment.date)}${isToday ? " · 今日" : ""} · タップで名前変更</span>
+          糸 ${garment.segmentCount} 本 / 移動 ${garment.totalDistanceM} m<br />
+          主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分
+        `;
+        meta.appendChild(renderColorBreakdown(garment));
+        meta.appendChild(renderColorLabels(garment));
+        const status = getGarmentShopStatus(garment);
+        const statusEl = document.createElement("span");
+        statusEl.className = `garmentStatus ${status.className}`;
+        statusEl.textContent = status.label;
+        meta.appendChild(statusEl);
+        meta.querySelector(".garmentName").addEventListener("click", () => renameGarment(garment.date));
+
+        card.appendChild(previewWrap);
+        card.appendChild(meta);
+        section.appendChild(card);
+      });
+
+      garmentListEl.appendChild(section);
+    }
+
+    function updateAppHeader() {
+      devDayTitleEl.textContent = `糸 — Day ${DEV_SESSION_DAY} · v${APP_SHELL_VERSION}`;
+      renderPersonalTestProgress();
+    }
+
+    function daysSinceInclusive(startDate, endDate) {
+      const parse = (s) => {
+        const [y, m, d] = s.split("-").map(Number);
+        return Date.UTC(y, m - 1, d);
+      };
+      return Math.floor((parse(endDate) - parse(startDate)) / 86400000) + 1;
+    }
+
+    function getTestGarmentCount(startDate) {
+      return loadGarments().filter((g) => g.date >= startDate).length;
+    }
+
+    function renderPersonalTestProgress() {
+      const meta = loadMeta();
+      if (!meta.personalTestActive || !meta.personalTestStart) {
+        personalTestProgressEl.hidden = true;
+        return;
+      }
+      const today = getLocalDateString();
+      const dayNum = Math.min(PERSONAL_TEST_DAYS, daysSinceInclusive(meta.personalTestStart, today));
+      const garmentCount = getTestGarmentCount(meta.personalTestStart);
+      const complete = dayNum >= PERSONAL_TEST_DAYS;
+      personalTestProgressEl.hidden = false;
+      personalTestProgressEl.textContent = complete
+        ? `14日テスト完了 · 服 ${garmentCount}着（目標 ${PERSONAL_TEST_GARMENT_GOAL}着）`
+        : `14日テスト · ${dayNum}日目 / ${PERSONAL_TEST_DAYS} · 服 ${garmentCount}/${PERSONAL_TEST_GARMENT_GOAL}着`;
+    }
+
+    function applyPersonalTestUi() {
+      const meta = loadMeta();
+      document.body.classList.toggle("personal-test-mode", !!meta.personalTestActive);
+      renderPersonalTestProgress();
+    }
+
+    const FTUE_STEPS = [
+      {
+        title: "歩くと、糸が生まれる",
+        body: "あなたの一日の動きが、色の糸になります。0時にその糸は1着の服になる。"
+      },
+      {
+        title: "位置情報は、端末の中だけ",
+        body: "GPS はこの端末にだけ保存されます。外に送ったり、誰かと比べたりはしません。"
+      },
+      {
+        title: "色と太さには意味がある",
+        body: "糸の色は時間帯。太い糸は、じっとしていた時間。どちらも否定されません。"
+      },
+      {
+        title: "服屋と、たむろ場",
+        body: "翌朝、服屋に1着並ぶ。街の人が選んで着て、話しかけてくれる。"
+      }
+    ];
+
+    let ftueStepIndex = 0;
+
+    function renderFtueStep() {
+      const step = FTUE_STEPS[ftueStepIndex];
+      ftueStepIndicatorEl.textContent = `${ftueStepIndex + 1} / ${FTUE_STEPS.length}`;
+      ftueTitleEl.textContent = step.title;
+      ftueBodyEl.textContent = step.body;
+      ftueNextButtonEl.textContent = ftueStepIndex === FTUE_STEPS.length - 1 ? "準備へ" : "次へ";
+    }
+
+    function showFtue() {
+      ftueStepIndex = 0;
+      renderFtueStep();
+      ftueOverlayEl.hidden = false;
+      ftueOverlayEl.classList.add("visible");
+      ftueOverlayEl.setAttribute("aria-hidden", "false");
+    }
+
+    function hideFtue() {
+      ftueOverlayEl.classList.remove("visible");
+      ftueOverlayEl.hidden = true;
+      ftueOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function showPersonalTestReady() {
+      personalTestReadyOverlayEl.hidden = false;
+      personalTestReadyOverlayEl.classList.add("visible");
+      personalTestReadyOverlayEl.setAttribute("aria-hidden", "false");
+    }
+
+    function hidePersonalTestReady() {
+      personalTestReadyOverlayEl.classList.remove("visible");
+      personalTestReadyOverlayEl.hidden = true;
+      personalTestReadyOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function completeFtue() {
+      const meta = loadMeta();
+      meta.ftueDone = true;
+      saveMeta(meta);
+      hideFtue();
+      showPersonalTestReady();
+    }
+
+    function startPersonalTest() {
+      const meta = loadMeta();
+      meta.ftueDone = true;
+      meta.personalTestActive = true;
+      meta.personalTestStart = getLocalDateString();
+      saveMeta(meta);
+      hidePersonalTestReady();
+      applyPersonalTestUi();
+      messageEl.textContent = "14日テスト開始 — いつもどおり歩いて、明日の朝に服屋へ";
+    }
+
+    function maybeShowOnboarding() {
+      const meta = loadMeta();
+      if (meta.personalTestActive || meta.ftueDone) return;
+
+      const openFtue = () => showFtue();
+      if (spinOverlayEl.classList.contains("visible")) {
+        const observer = new MutationObserver(() => {
+          if (!spinOverlayEl.classList.contains("visible")) {
+            observer.disconnect();
+            openFtue();
+          }
+        });
+        observer.observe(spinOverlayEl, { attributes: true, attributeFilter: ["class"] });
+        return;
+      }
+      window.setTimeout(openFtue, 400);
+    }
+
+    function getTodayTestNote() {
+      const meta = loadMeta();
+      const today = getLocalDateString();
+      const entry = (meta.personalTestNotes || []).find((n) => n.date === today);
+      return entry ? entry.text : "";
+    }
+
+    function renderTestMemoHistory() {
+      const meta = loadMeta();
+      const notes = (meta.personalTestNotes || []).slice().sort((a, b) => b.date.localeCompare(a.date));
+      testMemoHistoryEl.innerHTML = "";
+      let pastCount = 0;
+      notes.forEach((note) => {
+        if (note.date === getLocalDateString()) return;
+        pastCount++;
+        const li = document.createElement("li");
+        const dateEl = document.createElement("span");
+        dateEl.className = "testMemoDate";
+        dateEl.textContent = formatDateLabel(note.date);
+        li.appendChild(dateEl);
+        li.appendChild(document.createTextNode(note.text));
+        testMemoHistoryEl.appendChild(li);
+      });
+      testMemoHistorySectionEl.hidden = pastCount === 0;
+    }
+
+    function openTestMemo() {
+      const meta = loadMeta();
+      if (!meta.personalTestActive || !meta.personalTestStart) return;
+      const dayNum = Math.min(PERSONAL_TEST_DAYS, daysSinceInclusive(meta.personalTestStart, getLocalDateString()));
+      const garmentCount = getTestGarmentCount(meta.personalTestStart);
+      const today = getLocalDateString();
+      testMemoSummaryEl.textContent = `${dayNum}日目 / ${PERSONAL_TEST_DAYS} · 服 ${garmentCount}/${PERSONAL_TEST_GARMENT_GOAL}着`;
+      testMemoDateLabelEl.textContent = `今日のメモ（${formatDateLabel(today)}）`;
+      testMemoInputEl.value = getTodayTestNote();
+      renderTestMemoHistory();
+      testMemoOverlayEl.hidden = false;
+      testMemoOverlayEl.classList.add("visible");
+      testMemoOverlayEl.setAttribute("aria-hidden", "false");
+      document.body.classList.add("memo-overlay-open");
+    }
+
+    function closeTestMemo() {
+      testMemoOverlayEl.classList.remove("visible");
+      testMemoOverlayEl.hidden = true;
+      testMemoOverlayEl.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("memo-overlay-open");
+      testMemoInputEl.blur();
+    }
+
+    function saveTodayTestNote() {
+      const meta = loadMeta();
+      if (!meta.personalTestNotes) meta.personalTestNotes = [];
+      const today = getLocalDateString();
+      const text = testMemoInputEl.value.trim();
+      const idx = meta.personalTestNotes.findIndex((n) => n.date === today);
+      if (text) {
+        if (idx >= 0) meta.personalTestNotes[idx].text = text;
+        else meta.personalTestNotes.push({ date: today, text });
+      } else if (idx >= 0) {
+        meta.personalTestNotes.splice(idx, 1);
+      }
+      saveMeta(meta);
+      closeTestMemo();
+      messageEl.textContent = text ? "テストメモを保存しました" : "テストメモを消しました";
+    }
+
+    function checkBackupReminder() {
+      const meta = loadMeta();
+      if (!meta.personalTestActive || !meta.personalTestStart) return false;
+      const dayNum = daysSinceInclusive(meta.personalTestStart, getLocalDateString());
+      if (dayNum < 7) return false;
+      const lastBackup = meta.lastBackupAt ? meta.lastBackupAt.slice(0, 10) : "";
+      if (lastBackup >= meta.personalTestStart) return false;
+      return true;
+    }
+
+    function setupPersonalTestFlow() {
+      personalTestStartButton.addEventListener("click", () => {
+        const meta = loadMeta();
+        if (!meta.ftueDone) {
+          showFtue();
+          return;
+        }
+        showPersonalTestReady();
+      });
+      ftueNextButtonEl.addEventListener("click", () => {
+        if (ftueStepIndex < FTUE_STEPS.length - 1) {
+          ftueStepIndex++;
+          renderFtueStep();
+          return;
+        }
+        completeFtue();
+      });
+      ftueSkipButtonEl.addEventListener("click", completeFtue);
+      personalTestConfirmButtonEl.addEventListener("click", startPersonalTest);
+      personalTestLaterButtonEl.addEventListener("click", hidePersonalTestReady);
+      testMemoButton.addEventListener("click", openTestMemo);
+      testMemoCloseButtonEl.addEventListener("click", closeTestMemo);
+      testMemoSaveButtonEl.addEventListener("click", saveTodayTestNote);
+      personalTestProgressEl.addEventListener("click", openTestMemo);
+      testMemoOverlayEl.addEventListener("click", (e) => {
+        if (e.target === testMemoOverlayEl) closeTestMemo();
+      });
+      testMemoInputEl.addEventListener("focus", () => {
+        window.setTimeout(() => {
+          testMemoInputEl.scrollIntoView({ block: "center", behavior: "smooth" });
+          testMemoSaveButtonEl.scrollIntoView({ block: "end", behavior: "smooth" });
+        }, 320);
+      });
+      testMemoInputEl.addEventListener("click", (e) => e.stopPropagation());
+    }
+
+    function setupOfflineStatus() {
+      function refresh() {
+        offlineBadgeEl.hidden = navigator.onLine;
+      }
+      window.addEventListener("online", refresh);
+      window.addEventListener("offline", refresh);
+      refresh();
+    }
+
+    async function shellIsCached() {
+      if (!("caches" in window)) return false;
+      const cache = await caches.open(OFFLINE_CACHE);
+      const hit = await cache.match("./thread_gps_pwa.html", { ignoreSearch: true });
+      return !!hit;
+    }
+
+    async function warmOfflineShell() {
+      if (!navigator.onLine || !("caches" in window)) return false;
+      try {
+        const response = await fetch(`./thread_gps_pwa.html?v=${APP_SHELL_VERSION}`, { cache: "no-store" });
+        if (!response.ok) return false;
+        const cache = await caches.open(OFFLINE_CACHE);
+        await cache.put("./thread_gps_pwa.html", response.clone());
+        await cache.put(response.url, response.clone());
+        if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: "CACHE_SHELL" });
+        }
+        if (navigator.storage && navigator.storage.persist) {
+          await navigator.storage.persist();
+        }
+        const meta = loadMeta();
+        meta.offlineShellVersion = APP_SHELL_VERSION;
+        meta.offlineShellReadyAt = new Date().toISOString();
+        saveMeta(meta);
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function setupOfflinePrep() {
+      if (!window.isSecureContext) return;
+
+      async function getOfflinePrepState() {
+        const meta = loadMeta();
+        const cached = await shellIsCached();
+        const shellReady = cached && meta.offlineShellVersion === APP_SHELL_VERSION;
+        if (!isStandaloneApp()) return "need-install";
+        if (shellReady && isLanDevOrigin()) return "ready-lan";
+        if (shellReady) return "ready";
+        if (cached) return "stale";
+        return "missing";
+      }
+
+      async function refreshOfflinePrepUi() {
+        if (!navigator.onLine) {
+          offlinePrepBannerEl.classList.remove("visible");
+          offlinePrepActionButtonEl.textContent = isLanDevOrigin() ? "オフライン不可（家）" : "オフライン準備";
+          offlinePrepActionButtonEl.disabled = true;
+          return;
+        }
+        offlinePrepActionButtonEl.disabled = false;
+
+        const state = await getOfflinePrepState();
+        if (state === "ready") {
+          offlinePrepBannerEl.classList.remove("visible");
+          offlinePrepActionButtonEl.textContent = "オフライン準備済み";
+          return;
+        }
+        if (state === "ready-lan") {
+          offlinePrepBannerEl.classList.add("visible");
+          offlinePrepTextEl.textContent = "保存はできていますが、家のURLではSamsungでオフライン起動できません";
+          offlinePrepBannerButtonEl.textContent = "対処法";
+          offlinePrepActionButtonEl.textContent = "オフライン不可（家）";
+          return;
+        }
+
+        offlinePrepBannerEl.classList.add("visible");
+        offlinePrepActionButtonEl.textContent = "オフライン準備";
+        if (state === "need-install") {
+          offlinePrepTextEl.textContent = "本体は保存済みです。次はホーム画面に追加して、アイコンから開いてください";
+          offlinePrepBannerButtonEl.textContent = "手順を見る";
+        } else {
+          offlinePrepTextEl.textContent = "WiFiを切る前に、アプリ本体をこの端末に保存してください";
+          offlinePrepBannerButtonEl.textContent = "準備する";
+        }
+      }
+
+      async function runOfflinePrep(fromBanner) {
+        const state = await getOfflinePrepState();
+        if (state === "ready-lan") {
+          messageEl.textContent = offlineLanHelpMessage();
+          return;
+        }
+        if (state === "need-install") {
+          openInstallGuide();
+          return;
+        }
+        if (state === "ready" && !fromBanner) {
+          messageEl.textContent = "準備完了。①アプリを完全に閉じる ②WiFi OFF ③ホームの「糸」アイコンから開く";
+          return;
+        }
+
+        offlinePrepActionButtonEl.disabled = true;
+        offlinePrepBannerButtonEl.disabled = true;
+        offlinePrepActionButtonEl.textContent = "保存中…";
+        offlinePrepBannerButtonEl.textContent = "保存中…";
+        const ok = await warmOfflineShell();
+        offlinePrepActionButtonEl.disabled = false;
+        offlinePrepBannerButtonEl.disabled = false;
+        if (ok) {
+          messageEl.textContent = "オフライン準備OK — WiFiを切ってホームのアイコンから開けます";
+          await refreshOfflinePrepUi();
+        } else {
+          offlinePrepActionButtonEl.textContent = "オフライン準備";
+          offlinePrepBannerButtonEl.textContent = "準備する";
+          messageEl.textContent = "保存に失敗しました。WiFiとサーバーを確認してください";
+        }
+      }
+
+      offlinePrepActionButtonEl.addEventListener("click", () => runOfflinePrep(false));
+      offlinePrepBannerButtonEl.addEventListener("click", () => runOfflinePrep(true));
+      window.addEventListener("online", refreshOfflinePrepUi);
+      window.addEventListener("offline", refreshOfflinePrepUi);
+      refreshOfflinePrepUi();
+    }
+
+    function setupDevToolsToggle() {
+      let pressTimer = null;
+      appTitleEl.addEventListener("pointerdown", () => {
+        pressTimer = window.setTimeout(() => {
+          document.body.classList.toggle("dev-tools-visible");
+          const on = document.body.classList.contains("dev-tools-visible");
+          messageEl.textContent = on ? "開発ツールを表示中" : "開発ツールを非表示";
+        }, 1500);
+      });
+      const clearPress = () => {
+        if (pressTimer) {
+          window.clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      };
+      appTitleEl.addEventListener("pointerup", clearPress);
+      appTitleEl.addEventListener("pointerleave", clearPress);
+      appTitleEl.addEventListener("pointercancel", clearPress);
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.body.classList.toggle("view-shop", view === "shop");
+      document.body.classList.toggle("view-hangout", view === "hangout");
+      viewShop.hidden = view !== "shop";
+      viewHangout.hidden = view !== "hangout";
+      tabThread.classList.toggle("active", view === "thread");
+      tabShop.classList.toggle("active", view === "shop");
+      tabHangout.classList.toggle("active", view === "hangout");
+      if (view === "shop") {
+        renderShop();
+        const meta = loadMeta();
+        messageEl.textContent = meta.personalTestActive
+          ? "服屋 — 昨日の一日が、ここに並ぶ"
+          : "服屋 — あなたの一日が形になった服";
+      } else if (view === "hangout") {
+        renderHangout();
+        messageEl.textContent = "たむろ場 — 誰かがあなたの服を着ている";
+      } else {
+        messageEl.textContent = segments.length === 0
+          ? "雨の日は WASD で試せます。晴れたら GPS"
+          : "WASD で歩く。0:00 に自動で紡がれます";
+        renderThreads();
+      }
+    }
+
+    function distanceM(x1, y1, x2, y2) {
+      const dx = x2 - x1;
+      const dy = y2 - y1;
+      return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function loadState() {
+      const savedOrigin = localStorage.getItem(storageKey("origin"));
+      if (savedOrigin) {
+        const o = JSON.parse(savedOrigin);
+        originLat = o.lat;
+        originLng = o.lng;
+      }
+
+      segments = JSON.parse(localStorage.getItem(storageKey("segments")) || "[]");
+      nextSegmentSeq = Number(localStorage.getItem(storageKey("seq")) || "1");
+      totalDistanceM = Number(localStorage.getItem(storageKey("distance")) || "0");
+
+      const savedWalk = localStorage.getItem(storageKey("walk"));
+      if (savedWalk) {
+        const w = JSON.parse(savedWalk);
+        playerX = w.playerX ?? 0;
+        playerY = w.playerY ?? 0;
+        lastAccepted = w.lastAccepted ?? null;
+        lastSegmentEnd = w.lastSegmentEnd ?? null;
+      } else if (segments.length > 0) {
+        const last = segments[segments.length - 1];
+        lastSegmentEnd = { x: last.to.x, y: last.to.y, t: Date.parse(last.endedAt) };
+        playerX = last.to.x;
+        playerY = last.to.y;
+        lastAccepted = { ...lastSegmentEnd, lat: last.to.lat, lng: last.to.lng };
+      }
+    }
+
+    function saveWalkState() {
+      localStorage.setItem(storageKey("walk"), JSON.stringify({
+        playerX,
+        playerY,
+        lastAccepted,
+        lastSegmentEnd
+      }));
+    }
+
+    function saveState() {
+      localStorage.setItem(storageKey("segments"), JSON.stringify(segments));
+      localStorage.setItem(storageKey("seq"), String(nextSegmentSeq));
+      localStorage.setItem(storageKey("distance"), String(totalDistanceM));
+      saveWalkState();
+    }
+
+    function makeSegmentId() {
+      const id = `thread_${getLocalDateString()}_${String(nextSegmentSeq).padStart(3, "0")}`;
+      nextSegmentSeq += 1;
+      return id;
+    }
+
+    function pushMoveSegment(from, to, distance, startedAt, endedAt, speedMps = null) {
+      const startedDate = startedAt instanceof Date ? startedAt : new Date(startedAt);
+      const endedDate = endedAt instanceof Date ? endedAt : new Date(endedAt);
+      const bandColor = getBandColorFromDate(endedDate);
+      const color = getThreadDisplayColor(endedDate, speedMps);
+      const thickness = calcMoveThickness(distance);
+      if (speedMps !== null && !Number.isNaN(speedMps)) {
+        lastMoveSpeedMps = speedMps;
+      }
+      segments.push({
+        id: makeSegmentId(),
+        date: getLocalDateString(),
+        type: "move",
+        from: { x: from.x, y: from.y, lat: from.lat, lng: from.lng },
+        to: { x: to.x, y: to.y, lat: to.lat, lng: to.lng },
+        distanceM: Math.round(distance),
+        durationMs: Math.max(0, endedDate.getTime() - startedDate.getTime()),
+        color,
+        bandColor,
+        speedMps: speedMps ?? null,
+        thickness,
+        startedAt: startedDate.toISOString(),
+        endedAt: endedDate.toISOString()
+      });
+      totalDistanceM += distance;
+      lastSegmentEnd = { x: to.x, y: to.y, t: endedDate.getTime() };
+      saveState();
+      updateHud();
+      renderThreads();
+      messageEl.textContent = `${getTimeBandName(endedDate)}の糸が1本増えました`;
+    }
+
+    function pushStaySegment(x, y, lat, lng, stayMs, endedAt) {
+      const endedDate = endedAt instanceof Date ? endedAt : new Date(endedAt);
+      const staySec = stayMs / 1000;
+      const bandColor = getBandColorFromDate(endedDate);
+      const color = getInterpolatedTimeColor(endedDate);
+      const thickness = calcStayThickness(staySec);
+      segments.push({
+        id: makeSegmentId(),
+        date: getLocalDateString(),
+        type: "stay",
+        from: { x, y, lat, lng },
+        to: { x, y, lat, lng },
+        distanceM: 0,
+        durationMs: stayMs,
+        color,
+        bandColor,
+        thickness,
+        startedAt: new Date(endedDate.getTime() - stayMs).toISOString(),
+        endedAt: endedDate.toISOString()
+      });
+      saveState();
+      updateHud();
+      renderThreads();
+      messageEl.textContent = "立ち止まった時間も、糸になりました";
+    }
+
+    function resetStayTracking(x, y) {
+      stayAnchor = { x, y };
+      stayStartedAt = Date.now();
+      staySegmentEmitted = false;
+    }
+
+    function maybeEmitStay(now) {
+      if (!stayAnchor || !stayStartedAt || staySegmentEmitted) return;
+      const stayMs = now - stayStartedAt;
+      if (stayMs < STAY_THRESHOLD_MS) return;
+      pushStaySegment(
+        stayAnchor.x,
+        stayAnchor.y,
+        lastAccepted?.lat ?? null,
+        lastAccepted?.lng ?? null,
+        stayMs,
+        now
+      );
+      staySegmentEmitted = true;
+    }
+
+    function processPosition(x, y, lat, lng, recordedAt, speedMps, source = "gps") {
+      const now = recordedAt.getTime();
+
+      if (speedMps !== null && speedMps > MAX_SPEED_MPS) return;
+
+      if (!lastAccepted) {
+        lastAccepted = { x, y, lat, lng, t: now };
+        lastSegmentEnd = { x, y, t: now };
+        playerX = x;
+        playerY = y;
+        resetStayTracking(x, y);
+        return;
+      }
+
+      const distFromAccepted = distanceM(lastAccepted.x, lastAccepted.y, x, y);
+
+      if (source === "gps" && distFromAccepted < MIN_FILTER_M) {
+        maybeEmitStay(now);
+        return;
+      }
+
+      if (distFromAccepted >= MIN_FILTER_M || source === "keyboard") {
+        maybeEmitStay(now);
+      }
+
+      const distFromStay = stayAnchor
+        ? distanceM(stayAnchor.x, stayAnchor.y, x, y)
+        : Infinity;
+
+      if (distFromStay > STAY_RADIUS_M) {
+        resetStayTracking(x, y);
+      }
+
+      const segStart = lastSegmentEnd || lastAccepted;
+      const segDist = distanceM(segStart.x, segStart.y, x, y);
+      const minMove = getMinMoveSegmentM(source);
+
+      if (segDist >= minMove) {
+        const segSpeed = speedMps !== null && !Number.isNaN(speedMps)
+          ? speedMps
+          : (source === "keyboard" ? KEYBOARD_SPEED_MPS : null);
+        pushMoveSegment(
+          { x: segStart.x, y: segStart.y, lat: lastAccepted.lat, lng: lastAccepted.lng },
+          { x, y, lat, lng },
+          segDist,
+          segStart.t || now,
+          now,
+          segSpeed
+        );
+        resetStayTracking(x, y);
+      }
+
+      lastAccepted = { x, y, lat, lng, t: now };
+      playerX = x;
+      playerY = y;
+      saveWalkState();
+    }
+
+    function worldToScreen(x, y) {
+      return {
+        x: window.innerWidth / 2 + (x - playerX) * PX_PER_M,
+        y: window.innerHeight / 2 + (y - playerY) * PX_PER_M
+      };
+    }
+
+    function strokeWidthFor(seg) {
+      return Math.max(6, seg.thickness * 3);
+    }
+
+    function appendLine(parent, x1, y1, x2, y2, color, width, opacity, dash) {
+      const glow = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      glow.setAttribute("x1", x1);
+      glow.setAttribute("y1", y1);
+      glow.setAttribute("x2", x2);
+      glow.setAttribute("y2", y2);
+      glow.setAttribute("stroke", color);
+      glow.setAttribute("stroke-opacity", opacity * 0.35);
+      glow.setAttribute("stroke-width", width + 10);
+      glow.setAttribute("stroke-linecap", "round");
+      if (dash) glow.setAttribute("stroke-dasharray", dash);
+
+      const core = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      core.setAttribute("x1", x1);
+      core.setAttribute("y1", y1);
+      core.setAttribute("x2", x2);
+      core.setAttribute("y2", y2);
+      core.setAttribute("stroke", color);
+      core.setAttribute("stroke-opacity", opacity);
+      core.setAttribute("stroke-width", width);
+      core.setAttribute("stroke-linecap", "round");
+      if (dash) core.setAttribute("stroke-dasharray", dash);
+
+      parent.appendChild(glow);
+      parent.appendChild(core);
+    }
+
+    function renderThreads() {
+      threadLayer.setAttribute("width", window.innerWidth);
+      threadLayer.setAttribute("height", window.innerHeight);
+      threadLayer.innerHTML = "";
+
+      segments.forEach((seg, index) => {
+        const age = (index + 1) / segments.length;
+        const width = strokeWidthFor(seg);
+
+        if (seg.type === "stay") {
+          const p = worldToScreen(seg.from.x, seg.from.y);
+          const r = width * 1.8;
+          const glow = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          glow.setAttribute("cx", p.x);
+          glow.setAttribute("cy", p.y);
+          glow.setAttribute("r", r + 6);
+          glow.setAttribute("fill", seg.color);
+          glow.setAttribute("fill-opacity", 0.22);
+          const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          core.setAttribute("cx", p.x);
+          core.setAttribute("cy", p.y);
+          core.setAttribute("r", r);
+          core.setAttribute("fill", seg.color);
+          core.setAttribute("fill-opacity", 0.55 + age * 0.35);
+          threadLayer.appendChild(glow);
+          threadLayer.appendChild(core);
+          return;
+        }
+
+        const p1 = worldToScreen(seg.from.x, seg.from.y);
+        const p2 = worldToScreen(seg.to.x, seg.to.y);
+        appendLine(threadLayer, p1.x, p1.y, p2.x, p2.y, seg.color, width, 0.55 + age * 0.4);
+      });
+
+      const segStart = lastSegmentEnd || lastAccepted;
+      if (segStart) {
+        const progress = distanceM(segStart.x, segStart.y, playerX, playerY);
+        if (progress > 0.05) {
+          const p1 = worldToScreen(segStart.x, segStart.y);
+          const p2 = worldToScreen(playerX, playerY);
+          const previewColor = getThreadDisplayColor(new Date(), lastMoveSpeedMps);
+          appendLine(threadLayer, p1.x, p1.y, p2.x, p2.y, previewColor, 5, 0.55, "10 8");
+        }
+      }
+    }
+
+    function updateHud() {
+      threadCountEl.textContent = String(segments.length);
+      distanceTotalEl.textContent = String(Math.round(totalDistanceM));
+      const remain = distanceToNextThreadM();
+      const minMove = getMinMoveSegmentM(inputMode === "keyboard" ? "keyboard" : "gps");
+      nextThreadEl.textContent = `${remain.toFixed(1)} m / ${minMove.toFixed(1)} m`;
+    }
+
+    function updateBackground() {
+      const game = document.getElementById("game");
+      const gridPx = GRID_M * PX_PER_M;
+      game.style.backgroundSize = `${gridPx}px ${gridPx}px`;
+      game.style.backgroundPosition = `${-playerX * PX_PER_M}px ${-playerY * PX_PER_M}px`;
+    }
+
+    function gpsBlockedReason() {
+      if (!window.isSecureContext) {
+        return "GPSには HTTPS が必要です。PC で serve_https.py を起動して https://... で開いてください";
+      }
+      if (!navigator.geolocation) {
+        return "このブラウザは GPS に非対応です";
+      }
+      return null;
+    }
+
+    function startGps() {
+      const blocked = gpsBlockedReason();
+      if (blocked) {
+        gpsStatusEl.textContent = "不可";
+        messageEl.textContent = blocked;
+        return;
+      }
+
+      inputMode = "gps";
+      modeEl.textContent = "GPS";
+      gpsStatusEl.textContent = "許可待ち…";
+      gpsButton.textContent = "GPS停止";
+      messageEl.textContent = "位置情報の許可を「許可」にしてください";
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          gpsStatusEl.textContent = "OK";
+          messageEl.textContent = "GPS 取得開始。歩いてみてください";
+          const { latitude, longitude, accuracy, speed } = pos.coords;
+          const meters = latLngToMeters(latitude, longitude);
+          processGpsPosition(
+            meters.x,
+            meters.y,
+            latitude,
+            longitude,
+            new Date(pos.timestamp),
+            speed,
+            accuracy
+          );
+          updateBackground();
+          renderThreads();
+          updateHud();
+
+          if (gpsWatchId !== null) {
+            navigator.geolocation.clearWatch(gpsWatchId);
+          }
+          gpsWatchId = navigator.geolocation.watchPosition(
+            (p) => {
+              const c = p.coords;
+              gpsStatusEl.textContent = c.accuracy ? `±${Math.round(c.accuracy)}m` : "取得中";
+              const m = latLngToMeters(c.latitude, c.longitude);
+              processGpsPosition(
+                m.x, m.y, c.latitude, c.longitude,
+                new Date(p.timestamp), c.speed, c.accuracy
+              );
+              updateBackground();
+              renderThreads();
+              updateHud();
+            },
+            (err) => handleGpsError(err),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 30000 }
+          );
+        },
+        (err) => handleGpsError(err),
+        { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 }
+      );
+    }
+
+    function handleGpsError(err) {
+      gpsStatusEl.textContent = "エラー";
+      const hints = {
+        1: "位置情報が拒否されました。ブラウザ設定 → サイトの権限 → 位置情報を「許可」",
+        2: "位置情報を取得できません（屋外・HTTPS接続を確認）",
+        3: "タイムアウト — 屋外で再試行してください"
+      };
+      messageEl.textContent = hints[err.code] || err.message;
+      stopGps();
+    }
+
+    function stopGpsWatchOnly() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+    }
+
+    function stopGps() {
+      if (gpsWatchId !== null) {
+        navigator.geolocation.clearWatch(gpsWatchId);
+        gpsWatchId = null;
+      }
+      gpsRecentReadings = [];
+      gpsAccuracyM = null;
+      if (inputMode === "gps") {
+        inputMode = keyboardActive ? "keyboard" : "idle";
+        modeEl.textContent = keyboardActive ? "キーボード" : "待機";
+        gpsStatusEl.textContent = "停止";
+        gpsButton.textContent = "GPS開始";
+      }
+    }
+
+    function resetToday() {
+      if (!confirm("今日の糸をすべて消しますか？")) return;
+      stopGps();
+      gpsRecentReadings = [];
+      segments = [];
+      nextSegmentSeq = 1;
+      totalDistanceM = 0;
+      originLat = null;
+      originLng = null;
+      lastAccepted = null;
+      lastSegmentEnd = null;
+      stayAnchor = null;
+      stayStartedAt = null;
+      staySegmentEmitted = false;
+      playerX = 0;
+      playerY = 0;
+      localStorage.removeItem(storageKey("segments"));
+      localStorage.removeItem(storageKey("seq"));
+      localStorage.removeItem(storageKey("distance"));
+      localStorage.removeItem(storageKey("origin"));
+      localStorage.removeItem(storageKey("walk"));
+      updateHud();
+      updateBackground();
+      renderThreads();
+      messageEl.textContent = "今日の糸をリセットしました";
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (isTextInputFocused()) return;
+      const key = e.key.toLowerCase();
+      if (!isGameKey(key)) return;
+      e.preventDefault();
+      keys[key] = true;
+      keyboardActive = true;
+      if (inputMode !== "keyboard") {
+        activateKeyboardMode();
+      }
+    }, true);
+
+    window.addEventListener("keyup", (e) => {
+      if (isTextInputFocused()) return;
+      const key = e.key.toLowerCase();
+      if (!isGameKey(key)) return;
+      e.preventDefault();
+      keys[key] = false;
+    }, true);
+
+    window.addEventListener("blur", () => {
+      Object.keys(keys).forEach((k) => { keys[k] = false; });
+    });
+
+    document.addEventListener("click", (e) => {
+      if (e.target.closest("input, textarea, select, button, a, label, [contenteditable]")) return;
+      if (!testMemoOverlayEl.hidden) return;
+      document.body.focus({ preventScroll: true });
+    });
+
+    gpsButton.addEventListener("click", () => {
+      if (gpsWatchId !== null) stopGps();
+      else startGps();
+    });
+
+    spinTestButton.addEventListener("click", spinTodayTest);
+    midnightTestButton.addEventListener("click", simulateMidnightSpin);
+    hangoutTestButton.addEventListener("click", seedConversationTest);
+    colorDemoButton.addEventListener("click", showThreadColorDemo);
+    colorDemoCloseEl.addEventListener("click", hideThreadColorDemo);
+    colorDemoOverlayEl.addEventListener("click", (e) => {
+      if (e.target === colorDemoOverlayEl) hideThreadColorDemo();
+    });
+
+    tabThread.addEventListener("click", () => switchView("thread"));
+    tabShop.addEventListener("click", () => switchView("shop"));
+    tabHangout.addEventListener("click", () => switchView("hangout"));
+    hangoutTalkButtonEl.addEventListener("click", startHangoutDialogue);
+    hangoutBrowseButtonEl.addEventListener("click", browseGarmentsWithNpc);
+    hangoutResetPurchasesButtonEl.addEventListener("click", resetPurchases);
+
+    spinOverlayHangoutButtonEl.addEventListener("click", () => {
+      hideSpinOverlay();
+      switchView("hangout");
+      messageEl.textContent = "たむろ場 — 服屋で選んだ服を、誰かが着ている";
+    });
+
+    spinOverlayDismissButtonEl.addEventListener("click", () => {
+      hideSpinOverlay();
+      switchView("shop");
+      messageEl.textContent = "服屋 — あなたの一日が形になった服";
+    });
+
+    spinOverlayEl.addEventListener("click", (e) => {
+      if (e.target === spinOverlayEl && spinOverlayEl.classList.contains("morning")) {
+        hideSpinOverlay();
+      }
+    });
+
+    resetButton.addEventListener("click", resetToday);
+    async function forceReloadApp() {
+      messageEl.textContent = "キャッシュを消しています（記録は残します）…";
+      try {
+        if ("serviceWorker" in navigator) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map((reg) => reg.unregister()));
+        }
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+      } catch (_) {}
+      window.location.replace(`./thread_gps_pwa.html?bust=${Date.now()}`);
+    }
+
+    resetPurchasesButton.addEventListener("click", resetPurchases);
+    forceReloadButton.addEventListener("click", () => {
+      void forceReloadApp();
+    });
+    exportBackupButton.addEventListener("click", () => {
+      void exportBackup();
+    });
+    importBackupButton.addEventListener("click", () => {
+      importBackupInput.click();
+    });
+    importClipboardButton.addEventListener("click", () => {
+      if (!window.confirm("クリップボードの記録で上書きします。よろしいですか？")) return;
+      navigator.clipboard.readText()
+        .then((text) => {
+          const count = importBackupText(text);
+          messageEl.textContent = `記録を読み込みました（${count}件）。再起動します…`;
+          window.setTimeout(() => window.location.reload(), 600);
+        })
+        .catch(() => {
+          messageEl.textContent = "クリップボードを読めませんでした";
+        });
+    });
+    importBackupInput.addEventListener("change", () => {
+      const file = importBackupInput.files && importBackupInput.files[0];
+      importBackupInput.value = "";
+      if (!file) return;
+      if (!window.confirm("読み込むと、この端末の糸の記録に上書きします。よろしいですか？")) return;
+      importBackupFile(file).catch((err) => {
+        messageEl.textContent = err.message || "記録の読み込みに失敗しました";
+      });
+    });
+
+    window.addEventListener("resize", () => {
+      renderThreads();
+    });
+
+    let lastFrameAt = performance.now();
+
+    function keyboardLoop(now) {
+      try {
+        const dt = Math.min(0.05, (now - lastFrameAt) / 1000);
+        lastFrameAt = now;
+
+        let dx = 0;
+        let dy = 0;
+        if (keys["arrowleft"] || keys["a"]) dx -= 1;
+        if (keys["arrowright"] || keys["d"]) dx += 1;
+        if (keys["arrowup"] || keys["w"]) dy -= 1;
+        if (keys["arrowdown"] || keys["s"]) dy += 1;
+
+        if (dx !== 0 || dy !== 0) {
+          if (currentView !== "thread") return;
+          if (inputMode !== "keyboard") {
+            activateKeyboardMode();
+          }
+          playerEl.classList.add("moving");
+          const len = Math.hypot(dx, dy) || 1;
+          const nx = playerX + (dx / len) * KEYBOARD_SPEED_MPS * dt;
+          const ny = playerY + (dy / len) * KEYBOARD_SPEED_MPS * dt;
+          processPosition(nx, ny, null, null, new Date(), KEYBOARD_SPEED_MPS, "keyboard");
+          updateBackground();
+          renderThreads();
+          updateHud();
+        } else {
+          playerEl.classList.remove("moving");
+          if (inputMode === "keyboard") {
+            maybeEmitStay(Date.now());
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        messageEl.textContent = "エラー: " + err.message;
+      }
+
+      requestAnimationFrame(keyboardLoop);
+    }
+
+    const spinResult = checkAndSpinPastDays();
+    loadState();
+    ensureResidents();
+    garments = backfillGarmentNames();
+    residents = loadResidents();
+    purchases = loadPurchases();
+    syncNpcGarmentState();
+    residents = loadResidents();
+    validateDialogueTone();
+    updateAppHeader();
+    applyPersonalTestUi();
+    setupPersonalTestFlow();
+    setupDevToolsToggle();
+    setupOfflineStatus();
+    setupOfflinePrep();
+    setupInstallFlow();
+    setupServiceWorkerUpdates();
+    updateHud();
+    updateBackground();
+    renderThreads();
+    renderShop();
+    renderHangout();
+    modeEl.textContent = "待機";
+    gpsStatusEl.textContent = "—";
+    const { spunDays, restDays } = spinResult;
+    const yesterday = getYesterdayDateString();
+    if (spunDays.length > 0) {
+      const latestDate = spunDays.slice().sort().slice(-1)[0];
+      const latestGarment = loadGarments().find((g) => g.date === latestDate);
+      if (latestGarment) showMorningSpinReveal(latestGarment, spunDays);
+    } else if (restDays.includes(yesterday)) {
+      showMorningRestReveal([yesterday]);
+    } else if (!window.isSecureContext) {
+      messageEl.textContent = "GPSテスト: serve_https.py（家）または serve_outdoor.py（屋外）";
+    } else if (loadMeta().personalTestActive) {
+      if (checkBackupReminder()) {
+        const meta = loadMeta();
+        const dayNum = daysSinceInclusive(meta.personalTestStart, getLocalDateString());
+        messageEl.textContent = `${dayNum}日目 — 「記録を書き出す」でバックアップを`;
+      } else if (isStandaloneApp()) {
+        messageEl.textContent = "ホームから起動中 — いつもどおり歩いてください";
+      } else {
+        messageEl.textContent = "散歩のあと、明日の朝に服屋へ";
+      }
+      } else if (isStandaloneApp() && isLanDevOrigin()) {
+        messageEl.textContent = "家のURL — WiFiを切ると開けません。散歩前にアプリを開いたまま出かけてください";
+      } else if (isStandaloneApp()) {
+    } else {
+      messageEl.textContent = "右上「ホームに追加」でアプリ化できます";
+    }
+
+    maybeShowOnboarding();
+
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      /* registered in setupServiceWorkerUpdates */
+    }
+
+    document.body.focus();
+    requestAnimationFrame(keyboardLoop);
+  </script>
+</body>
+</html>
