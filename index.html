@@ -3839,7 +3839,8 @@
     }
 
     function updateAppHeader() {
-      devDayTitleEl.textContent = `糸 — Day ${DEV_SESSION_DAY} · v${APP_SHELL_VERSION}`;
+      devDayTitleEl.hidden = false;
+      devDayTitleEl.textContent = `Day ${DEV_SESSION_DAY} · v${APP_SHELL_VERSION}`;
       renderPersonalTestProgress();
     }
 
