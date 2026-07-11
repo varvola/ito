@@ -10,13 +10,13 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v35</title>
+  <title>糸 — Day 12 · v36</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
   <style>
     * { box-sizing: border-box; }
-    :root { color-scheme: only light; }
+    :root { color-scheme: only light; supported-color-schemes: light; }
 
     body.memo-overlay-open {
       touch-action: auto;
@@ -30,6 +30,8 @@
       color: white;
       touch-action: none;
       color-scheme: only light;
+      forced-color-adjust: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     #ambientSky {
@@ -37,8 +39,12 @@
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background: #647789;
-      transition: background 0.8s ease;
+      background-color: #647789;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      forced-color-adjust: none;
+      /* トランジションがあると「一瞬変わって戻る」ように見えやすいので切る */
+      transition: none;
     }
 
     #game {
@@ -52,17 +58,19 @@
         linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
       background-size: 70px 70px;
+      forced-color-adjust: none;
     }
 
     #skySwatch {
       display: inline-block;
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border-radius: 3px;
       margin-right: 6px;
       vertical-align: -2px;
-      border: 1px solid rgba(255,255,255,0.45);
+      border: 1px solid rgba(255,255,255,0.55);
       background: #647789;
+      forced-color-adjust: none;
     }
 
     #threadLayer {
@@ -1329,8 +1337,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 35;
-    const OFFLINE_CACHE = "ito-shell-v35";
+    const APP_SHELL_VERSION = 36;
+    const OFFLINE_CACHE = "ito-shell-v36";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -4624,6 +4632,27 @@
       return 0.07;
     }
 
+    function skyCssToHex(sky) {
+      if (sky.startsWith("#")) return sky;
+      const nums = sky.match(/\d+/g);
+      if (!nums || nums.length < 3) return "#647789";
+      return rgbToHex(Number(nums[0]), Number(nums[1]), Number(nums[2]));
+    }
+
+    function skySvgDataUrl(hex) {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="${hex}"/></svg>`;
+      return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+    }
+
+    function maybeWarnSamsungDarken() {
+      if (sessionStorage.getItem("itoSamsungSkyTip") === "1") return;
+      if (!/SamsungBrowser/i.test(navigator.userAgent || "")) return;
+      sessionStorage.setItem("itoSamsungSkyTip", "1");
+      if (!messageEl) return;
+      messageEl.textContent =
+        "空の色が一瞬で消えるとき: Samsung Internet の「ウェブサイトを暗くする」をOFFにしてください";
+    }
+
     function updateBackground() {
       const game = document.getElementById("game");
       const skyEl = document.getElementById("ambientSky");
@@ -4632,29 +4661,31 @@
       const gridPx = GRID_M * PX_PER_M;
       const gridA = ambientGridOpacity();
       const sky = currentView === "thread" ? ambientSkyColor() : "#17202a";
+      const hex = skyCssToHex(sky);
+      const svgFill = skySvgDataUrl(hex);
 
       game.style.backgroundSize = `${gridPx}px ${gridPx}px`;
       game.style.backgroundPosition = `${-playerX * PX_PER_M}px ${-playerY * PX_PER_M}px`;
-      // 単色は background-image にも載せ、Samsung の強制ダークで background-color だけ潰されるのを避ける
+      // 単色は SVG 画像＋ gradient で載せ、Samsung の強制ダークに潰されにくくする
       game.style.backgroundImage =
+        `${svgFill},` +
         `linear-gradient(${sky}, ${sky}),` +
         `linear-gradient(rgba(255,255,255,${gridA}) 1px, transparent 1px),` +
         `linear-gradient(90deg, rgba(255,255,255,${gridA}) 1px, transparent 1px)`;
       game.style.backgroundColor = sky;
 
-      if (skyEl) skyEl.style.background = sky;
+      if (skyEl) {
+        skyEl.style.backgroundColor = sky;
+        skyEl.style.backgroundImage = svgFill;
+      }
       document.documentElement.style.backgroundColor = sky;
       document.body.style.backgroundColor = sky;
-      if (swatch) swatch.style.background = sky;
-      if (themeMeta) {
-        const nums = sky.match(/\d+/g);
-        const hex = sky.startsWith("#")
-          ? sky
-          : nums && nums.length >= 3
-            ? rgbToHex(Number(nums[0]), Number(nums[1]), Number(nums[2]))
-            : "#647789";
-        themeMeta.setAttribute("content", hex);
+      if (swatch) {
+        swatch.style.backgroundColor = sky;
+        swatch.style.backgroundImage = svgFill;
       }
+      if (themeMeta) themeMeta.setAttribute("content", hex);
+      maybeWarnSamsungDarken();
     }
 
     function gpsBlockedReason() {
