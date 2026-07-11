@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v28</title>
+  <title>糸 — Day 12 · v29</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1107,6 +1107,7 @@
     <span id="devDayTitle" hidden></span><br />
     モード: <span id="mode">—</span><br />
     GPS: <span id="gpsStatus">—</span><br />
+    いまの空: <span id="liveWeather">—</span><br />
     今日の糸: <span id="threadCount">0</span> 本<br />
     移動: <span id="distanceTotal">0</span> m<br />
     次の糸まで: <span id="nextThread">—</span>
@@ -1291,8 +1292,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 28;
-    const OFFLINE_CACHE = "ito-shell-v28";
+    const APP_SHELL_VERSION = 29;
+    const OFFLINE_CACHE = "ito-shell-v29";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1300,6 +1301,7 @@
     const threadLayer = document.getElementById("threadLayer");
     const modeEl = document.getElementById("mode");
     const gpsStatusEl = document.getElementById("gpsStatus");
+    const liveWeatherEl = document.getElementById("liveWeather");
     const threadCountEl = document.getElementById("threadCount");
     const distanceTotalEl = document.getElementById("distanceTotal");
     const nextThreadEl = document.getElementById("nextThread");
@@ -1504,6 +1506,9 @@
     let inputMode = "idle";
     let gpsWatchId = null;
     let screenWakeLock = null;
+    let lastLiveWeatherFetchAt = 0;
+    let liveWeatherInFlight = false;
+    let liveWeatherLabel = null;
     const TIME_BAND_COLORS = {
       morning: "#7dd3fc",
       day: "#fde047",
@@ -1985,10 +1990,50 @@
 
     function rememberLastCoords(lat, lng) {
       const meta = loadMeta();
-      if (meta.lastLat === lat && meta.lastLng === lng) return;
+      if (meta.lastLat === lat && meta.lastLng === lng) {
+        refreshLiveWeather(lat, lng, false);
+        return;
+      }
       meta.lastLat = lat;
       meta.lastLng = lng;
       saveMeta(meta);
+      refreshLiveWeather(lat, lng, false);
+    }
+
+    async function refreshLiveWeather(lat, lng, force = false) {
+      if (!liveWeatherEl) return;
+      if (typeof lat !== "number" || typeof lng !== "number") return;
+      if (!navigator.onLine) {
+        if (!liveWeatherLabel) liveWeatherEl.textContent = "オフライン";
+        return;
+      }
+      const now = Date.now();
+      if (!force && now - lastLiveWeatherFetchAt < 5 * 60 * 1000) return;
+      if (liveWeatherInFlight) return;
+      liveWeatherInFlight = true;
+      try {
+        const params = new URLSearchParams({
+          latitude: String(lat),
+          longitude: String(lng),
+          current: "temperature_2m,weather_code",
+          timezone: "auto"
+        });
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const code = data?.current?.weather_code;
+        const temp = data?.current?.temperature_2m;
+        if (typeof code !== "number") return;
+        const moodInfo = weatherMoodFromCode(code);
+        const tempText = typeof temp === "number" ? `${Math.round(temp * 10) / 10}℃` : "—";
+        liveWeatherLabel = `${moodInfo.label} · ${tempText}`;
+        liveWeatherEl.textContent = liveWeatherLabel;
+        lastLiveWeatherFetchAt = Date.now();
+      } catch (_) {
+        if (!liveWeatherLabel) liveWeatherEl.textContent = "取得できず";
+      } finally {
+        liveWeatherInFlight = false;
+      }
     }
 
     function pickLatLngFromSegments(daySegments) {
@@ -4542,6 +4587,9 @@
         (pos) => {
           gpsStatusEl.textContent = "OK";
           requestScreenWakeLock();
+          if (typeof latitude === "number" && typeof longitude === "number") {
+            refreshLiveWeather(latitude, longitude, true);
+          }
           const pipHint = supportsDocumentPip()
             ? ""
             : " 他アプリへ切り替えると記録が止まることがあります（PWAではPiP不可）。";
@@ -4862,6 +4910,12 @@
 
     maybeShowOnboarding();
     backfillMissingWeather(4);
+    {
+      const meta = loadMeta();
+      if (typeof meta.lastLat === "number" && typeof meta.lastLng === "number") {
+        refreshLiveWeather(meta.lastLat, meta.lastLng, true);
+      }
+    }
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
       /* registered in setupServiceWorkerUpdates */
