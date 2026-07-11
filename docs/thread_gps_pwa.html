@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v27</title>
+  <title>糸 — Day 12 · v28</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1291,8 +1291,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 27;
-    const OFFLINE_CACHE = "ito-shell-v27";
+    const APP_SHELL_VERSION = 28;
+    const OFFLINE_CACHE = "ito-shell-v28";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1748,6 +1748,9 @@
 
     function processGpsPosition(x, y, lat, lng, recordedAt, speed, accuracy) {
       gpsAccuracyM = accuracy || gpsAccuracyM;
+      if (typeof lat === "number" && typeof lng === "number") {
+        rememberLastCoords(lat, lng);
+      }
       const now = recordedAt.getTime();
       const accLabel = gpsAccuracyM ? `±${Math.round(gpsAccuracyM)}m` : "取得中";
 
@@ -1978,6 +1981,146 @@
 
     function saveMeta(meta) {
       localStorage.setItem(META_KEY, JSON.stringify(meta));
+    }
+
+    function rememberLastCoords(lat, lng) {
+      const meta = loadMeta();
+      if (meta.lastLat === lat && meta.lastLng === lng) return;
+      meta.lastLat = lat;
+      meta.lastLng = lng;
+      saveMeta(meta);
+    }
+
+    function pickLatLngFromSegments(daySegments) {
+      const withCoords = (daySegments || []).filter(
+        (s) => s.from && typeof s.from.lat === "number" && typeof s.from.lng === "number"
+      );
+      if (withCoords.length > 0) {
+        const mid = withCoords[Math.floor(withCoords.length / 2)];
+        return { lat: mid.from.lat, lng: mid.from.lng };
+      }
+      const meta = loadMeta();
+      if (typeof meta.lastLat === "number" && typeof meta.lastLng === "number") {
+        return { lat: meta.lastLat, lng: meta.lastLng };
+      }
+      return null;
+    }
+
+    function weatherMoodFromCode(code) {
+      const c = Number(code);
+      if (Number.isNaN(c)) return { mood: "clear", label: "晴れ" };
+      if (c === 0) return { mood: "clear", label: "晴れ" };
+      if (c <= 3) return { mood: "cloudy", label: "くもり" };
+      if (c <= 48) return { mood: "fog", label: "霧" };
+      if (c <= 67 || (c >= 80 && c <= 82)) return { mood: "rain", label: "雨" };
+      if (c <= 77 || (c >= 85 && c <= 86)) return { mood: "snow", label: "雪" };
+      if (c >= 95) return { mood: "storm", label: "雷" };
+      return { mood: "cloudy", label: "くもり" };
+    }
+
+    function tempPatternScale(tempC) {
+      if (typeof tempC !== "number" || Number.isNaN(tempC)) return 1;
+      return Math.max(0.65, Math.min(1.45, 1.15 - (tempC - 15) * 0.025));
+    }
+
+    function getCachedWeather(dateStr) {
+      const meta = loadMeta();
+      return (meta.weatherCache && meta.weatherCache[dateStr]) || null;
+    }
+
+    function setCachedWeather(dateStr, payload) {
+      const meta = loadMeta();
+      if (!meta.weatherCache) meta.weatherCache = {};
+      meta.weatherCache[dateStr] = payload;
+      const keys = Object.keys(meta.weatherCache).sort();
+      while (keys.length > 40) {
+        delete meta.weatherCache[keys.shift()];
+      }
+      saveMeta(meta);
+    }
+
+    async function fetchDailyWeather(lat, lng, dateStr) {
+      const cached = getCachedWeather(dateStr);
+      if (cached && typeof cached.code === "number") return cached;
+      if (!navigator.onLine) return null;
+
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lng),
+        start_date: dateStr,
+        end_date: dateStr,
+        daily: "weather_code,temperature_2m_mean",
+        timezone: "auto"
+      });
+
+      const urls = [
+        `https://api.open-meteo.com/v1/forecast?${params}`,
+        `https://archive-api.open-meteo.com/v1/archive?${params}`
+      ];
+
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const code = data?.daily?.weather_code?.[0];
+          const temp = data?.daily?.temperature_2m_mean?.[0];
+          if (typeof code !== "number") continue;
+          const moodInfo = weatherMoodFromCode(code);
+          const payload = {
+            code,
+            tempC: typeof temp === "number" ? Math.round(temp * 10) / 10 : null,
+            mood: moodInfo.mood,
+            label: moodInfo.label,
+            fetchedAt: new Date().toISOString()
+          };
+          setCachedWeather(dateStr, payload);
+          return payload;
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    async function enrichGarmentWithWeather(garment, daySegments) {
+      if (!garment || garment.weatherMood) return garment;
+      const sample = pickLatLngFromSegments(daySegments);
+      if (!sample) return garment;
+      const weather = await fetchDailyWeather(sample.lat, sample.lng, garment.date);
+      if (!weather) return garment;
+
+      garment.weatherCode = weather.code;
+      garment.tempC = weather.tempC;
+      garment.weatherMood = weather.mood;
+      garment.weatherLabel = weather.label;
+
+      const list = loadGarments();
+      const idx = list.findIndex((g) => g.id === garment.id || g.date === garment.date);
+      if (idx >= 0) {
+        list[idx] = {
+          ...list[idx],
+          weatherCode: garment.weatherCode,
+          tempC: garment.tempC,
+          weatherMood: garment.weatherMood,
+          weatherLabel: garment.weatherLabel
+        };
+        saveGarmentsList(list);
+        garments = list;
+      }
+
+      if (currentView === "shop") renderShop();
+      if (currentView === "hangout") renderHangout();
+      return garment;
+    }
+
+    async function backfillMissingWeather(limit = 4) {
+      if (!navigator.onLine) return;
+      const list = loadGarments()
+        .filter((g) => !g.weatherMood)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, limit);
+      for (const garment of list) {
+        await enrichGarmentWithWeather(garment, []);
+      }
     }
 
     function recordRestDay(dateStr) {
@@ -2464,10 +2607,18 @@
       if (options.preserveName && existing?.displayName) {
         garment.displayName = existing.displayName;
       }
+      if (existing?.weatherMood && options.preserveName) {
+        garment.weatherCode = existing.weatherCode;
+        garment.tempC = existing.tempC;
+        garment.weatherMood = existing.weatherMood;
+        garment.weatherLabel = existing.weatherLabel;
+      }
       const list = loadGarments().filter((g) => g.date !== dateStr);
       list.push(garment);
       saveGarmentsList(list);
+      const segmentsCopy = daySegments.map((s) => ({ ...s, from: s.from ? { ...s.from } : s.from }));
       clearDayStorage(dateStr);
+      enrichGarmentWithWeather(garment, segmentsCopy);
       return garment;
     }
 
@@ -3460,7 +3611,97 @@
       }
 
       svg.appendChild(layer);
+      paintWeatherOverlay(layer, w, h, garment);
       appendGarmentFrame(svg, w, h);
+    }
+
+    function paintWeatherOverlay(layer, w, h, garment) {
+      const mood = garment.weatherMood;
+      if (!mood) return;
+      const seed = parseInt(String(garment.patternSeed || "0"), 16) || 0;
+      const scale = tempPatternScale(garment.tempC);
+      const ink = "rgba(255,255,255,0.42)";
+      const inkDark = "rgba(15,23,42,0.35)";
+
+      if (mood === "rain") {
+        const count = Math.round(14 / scale);
+        for (let i = 0; i < count; i++) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          const x = 6 + ((seed + i * 13) % (w - 12));
+          const y = 4 + ((seed * 2 + i * 19) % (h - 20));
+          const len = 10 * scale + (i % 3) * 3;
+          line.setAttribute("x1", x);
+          line.setAttribute("y1", y);
+          line.setAttribute("x2", x + 5 * scale);
+          line.setAttribute("y2", y + len);
+          line.setAttribute("stroke", i % 2 === 0 ? ink : inkDark);
+          line.setAttribute("stroke-width", String(1.6 * scale));
+          line.setAttribute("stroke-linecap", "round");
+          layer.appendChild(line);
+        }
+        return;
+      }
+
+      if (mood === "snow" || mood === "fog") {
+        const count = Math.round((mood === "fog" ? 10 : 16) / scale);
+        for (let i = 0; i < count; i++) {
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          circle.setAttribute("cx", String(8 + ((seed + i * 17) % (w - 16))));
+          circle.setAttribute("cy", String(10 + ((seed * 3 + i * 23) % (h - 20))));
+          circle.setAttribute("r", String((mood === "fog" ? 6 : 3) * scale + (i % 3)));
+          circle.setAttribute("fill", ink);
+          circle.setAttribute("opacity", mood === "fog" ? "0.22" : "0.55");
+          layer.appendChild(circle);
+        }
+        return;
+      }
+
+      if (mood === "storm") {
+        const count = Math.round(8 / scale);
+        for (let i = 0; i < count; i++) {
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+          const x = 10 + ((seed + i * 21) % (w - 24));
+          const y = 12 + ((seed * 5 + i * 29) % (h - 36));
+          const s = 8 * scale;
+          path.setAttribute("d", `M ${x} ${y} L ${x + s} ${y + s * 0.8} L ${x + s * 0.35} ${y + s * 0.8} L ${x + s * 1.1} ${y + s * 1.8}`);
+          path.setAttribute("fill", "none");
+          path.setAttribute("stroke", ink);
+          path.setAttribute("stroke-width", String(1.8 * scale));
+          path.setAttribute("stroke-linejoin", "round");
+          layer.appendChild(path);
+        }
+        return;
+      }
+
+      if (mood === "cloudy") {
+        const count = Math.round(5 / scale);
+        for (let i = 0; i < count; i++) {
+          const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+          ellipse.setAttribute("cx", String(20 + ((seed + i * 27) % (w - 40))));
+          ellipse.setAttribute("cy", String(24 + ((seed * 2 + i * 31) % (h - 48))));
+          ellipse.setAttribute("rx", String(16 * scale + (i % 3) * 4));
+          ellipse.setAttribute("ry", String(8 * scale + (i % 2) * 3));
+          ellipse.setAttribute("fill", ink);
+          ellipse.setAttribute("opacity", "0.28");
+          layer.appendChild(ellipse);
+        }
+        return;
+      }
+
+      // clear: sparse bright blocks
+      const size = Math.max(5, 9 * scale);
+      const count = Math.round(6 / scale);
+      for (let i = 0; i < count; i++) {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", String(8 + ((seed + i * 19) % (w - 20))));
+        rect.setAttribute("y", String(10 + ((seed * 4 + i * 23) % (h - 24))));
+        rect.setAttribute("width", String(size));
+        rect.setAttribute("height", String(size * 0.7));
+        rect.setAttribute("rx", "2");
+        rect.setAttribute("fill", ink);
+        rect.setAttribute("opacity", "0.35");
+        layer.appendChild(rect);
+      }
     }
 
     function renderShop() {
@@ -3517,7 +3758,11 @@
           <strong class="garmentName" title="タップで名前を変更">${displayName}</strong>
           <span class="garmentNameHint">${formatDateLabel(garment.date)}${isToday ? " · 今日" : ""} · タップで名前変更</span>
           糸 ${garment.segmentCount} 本 / 移動 ${garment.totalDistanceM} m<br />
-          主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分 · 柄 ${weaveLabel(resolveWeaveType(garment))}
+          主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分 · 柄 ${weaveLabel(resolveWeaveType(garment))}${
+            garment.weatherLabel
+              ? `<br />天気 ${garment.weatherLabel}${typeof garment.tempC === "number" ? ` · ${garment.tempC}℃` : ""}`
+              : ""
+          }
         `;
         meta.appendChild(renderColorBreakdown(garment));
         meta.appendChild(renderColorLabels(garment));
@@ -4616,6 +4861,7 @@
     }
 
     maybeShowOnboarding();
+    backfillMissingWeather(4);
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
       /* registered in setupServiceWorkerUpdates */
