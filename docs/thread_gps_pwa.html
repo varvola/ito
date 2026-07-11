@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v32</title>
+  <title>糸 — Day 12 · v33</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1305,8 +1305,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 32;
-    const OFFLINE_CACHE = "ito-shell-v32";
+    const APP_SHELL_VERSION = 33;
+    const OFFLINE_CACHE = "ito-shell-v33";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -4548,6 +4548,7 @@
       const remain = distanceToNextThreadM();
       const minMove = getMinMoveSegmentM(inputMode === "keyboard" ? "keyboard" : "gps");
       nextThreadEl.textContent = `${remain.toFixed(1)} m / ${minMove.toFixed(1)} m`;
+      if (currentView === "thread") updateBackground();
     }
 
     function mixRgb(a, b, t) {
@@ -4559,36 +4560,56 @@
       };
     }
 
+    function timeOfDaySkyBase(date = new Date()) {
+      const h = date.getHours() + date.getMinutes() / 60;
+      if (h >= 5 && h < 9) return { r: 30, g: 52, b: 78 };      // 朝
+      if (h >= 9 && h < 17) return { r: 38, g: 52, b: 64 };      // 昼
+      if (h >= 17 && h < 20) return { r: 58, g: 38, b: 42 };     // 夕
+      return { r: 24, g: 26, b: 52 };                              // 夜
+    }
+
     function ambientSkyColor(date = new Date()) {
-      const base = { r: 26, g: 35, b: 50 };
       const accent = hexToRgb(getInterpolatedTimeColor(date));
-      let mixed = mixRgb(base, accent, 0.22);
+      let mixed = mixRgb(timeOfDaySkyBase(date), accent, 0.16);
 
       const mood = liveWeatherMood;
       if (mood === "rain") {
-        mixed = mixRgb(mixed, { r: 14, g: 20, b: 32 }, 0.4);
+        mixed = mixRgb(mixed, { r: 16, g: 24, b: 38 }, 0.55);
       } else if (mood === "storm") {
-        mixed = mixRgb(mixed, { r: 18, g: 14, b: 34 }, 0.45);
+        mixed = mixRgb(mixed, { r: 22, g: 16, b: 40 }, 0.6);
       } else if (mood === "clear") {
-        mixed = mixRgb(mixed, { r: 42, g: 58, b: 78 }, 0.28);
+        mixed = mixRgb(mixed, { r: 52, g: 72, b: 96 }, 0.42);
       } else if (mood === "cloudy") {
-        mixed = mixRgb(mixed, { r: 40, g: 46, b: 56 }, 0.32);
+        mixed = mixRgb(mixed, { r: 48, g: 54, b: 64 }, 0.48);
       } else if (mood === "fog") {
-        mixed = mixRgb(mixed, { r: 52, g: 56, b: 64 }, 0.38);
+        mixed = mixRgb(mixed, { r: 68, g: 72, b: 80 }, 0.55);
       } else if (mood === "snow") {
-        mixed = mixRgb(mixed, { r: 58, g: 66, b: 82 }, 0.36);
+        mixed = mixRgb(mixed, { r: 72, g: 80, b: 98 }, 0.5);
       }
 
       return `rgb(${mixed.r}, ${mixed.g}, ${mixed.b})`;
     }
 
+    function ambientGridOpacity() {
+      const mood = liveWeatherMood;
+      if (mood === "rain" || mood === "storm") return 0.045;
+      if (mood === "fog") return 0.035;
+      if (mood === "clear") return 0.1;
+      if (mood === "snow") return 0.07;
+      return 0.07;
+    }
+
     function updateBackground() {
       const game = document.getElementById("game");
       const gridPx = GRID_M * PX_PER_M;
+      const gridA = ambientGridOpacity();
       game.style.backgroundSize = `${gridPx}px ${gridPx}px`;
       game.style.backgroundPosition = `${-playerX * PX_PER_M}px ${-playerY * PX_PER_M}px`;
+      game.style.backgroundImage =
+        `linear-gradient(rgba(255,255,255,${gridA}) 1px, transparent 1px),` +
+        `linear-gradient(90deg, rgba(255,255,255,${gridA}) 1px, transparent 1px)`;
       if (currentView === "thread") {
-        game.style.backgroundColor = ambientSkyColor();
+        game.style.setProperty("background-color", ambientSkyColor());
       }
     }
 
