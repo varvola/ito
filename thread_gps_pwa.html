@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 10 · v24</title>
+  <title>糸 — Day 11 · v25</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1289,9 +1289,9 @@
     const PX_PER_M = 14;
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
-    const DEV_SESSION_DAY = 10;
-    const APP_SHELL_VERSION = 24;
-    const OFFLINE_CACHE = "ito-shell-v24";
+    const DEV_SESSION_DAY = 11;
+    const APP_SHELL_VERSION = 25;
+    const OFFLINE_CACHE = "ito-shell-v25";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1502,6 +1502,7 @@
     let totalDistanceM = 0;
     let inputMode = "idle";
     let gpsWatchId = null;
+    let screenWakeLock = null;
     const TIME_BAND_COLORS = {
       morning: "#7dd3fc",
       day: "#fde047",
@@ -2342,10 +2343,16 @@
       }).catch(() => {});
 
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState !== "visible") return;
-        navigator.serviceWorker.ready.then((reg) => {
-          reg.update().then(() => applyWaitingWorker(reg));
-        }).catch(() => {});
+        if (document.visibilityState === "visible") {
+          if (gpsWatchId !== null) requestScreenWakeLock();
+          navigator.serviceWorker.ready.then((reg) => {
+            reg.update().then(() => applyWaitingWorker(reg));
+          }).catch(() => {});
+          return;
+        }
+        if (gpsWatchId !== null) {
+          messageEl.textContent = "裏に回ると糸の記録が止まることがあります。散歩中は糸を開いたままに";
+        }
       });
     }
 
@@ -4002,6 +4009,30 @@
       return null;
     }
 
+    async function requestScreenWakeLock() {
+      if (!("wakeLock" in navigator)) return;
+      try {
+        screenWakeLock = await navigator.wakeLock.request("screen");
+        screenWakeLock.addEventListener("release", () => {
+          screenWakeLock = null;
+        });
+      } catch (_) {
+        screenWakeLock = null;
+      }
+    }
+
+    async function releaseScreenWakeLock() {
+      if (!screenWakeLock) return;
+      try {
+        await screenWakeLock.release();
+      } catch (_) {}
+      screenWakeLock = null;
+    }
+
+    function supportsDocumentPip() {
+      return "documentPictureInPicture" in window;
+    }
+
     function startGps() {
       const blocked = gpsBlockedReason();
       if (blocked) {
@@ -4019,7 +4050,11 @@
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           gpsStatusEl.textContent = "OK";
-          messageEl.textContent = "GPS 取得開始。歩いてみてください";
+          requestScreenWakeLock();
+          const pipHint = supportsDocumentPip()
+            ? ""
+            : " 他アプリへ切り替えると記録が止まることがあります（PWAではPiP不可）。";
+          messageEl.textContent = "GPS開始 — 画面を開いたまま歩いてください。" + pipHint;
           const { latitude, longitude, accuracy, speed } = pos.coords;
           const meters = latLngToMeters(latitude, longitude);
           processGpsPosition(
@@ -4083,6 +4118,7 @@
         navigator.geolocation.clearWatch(gpsWatchId);
         gpsWatchId = null;
       }
+      releaseScreenWakeLock();
       gpsRecentReadings = [];
       gpsAccuracyM = null;
       if (inputMode === "gps") {
