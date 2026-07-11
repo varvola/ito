@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v29</title>
+  <title>糸 — Day 12 · v30</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -83,6 +83,17 @@
     }
 
     #ui strong { font-size: 14px; }
+
+    #devDayTitle {
+      display: inline-block;
+      margin-top: 2px;
+      font-size: 11px;
+      font-weight: 600;
+      opacity: 0.55;
+      letter-spacing: 0.02em;
+    }
+
+    #devDayTitle[hidden] { display: none !important; }
 
     #message {
       position: fixed;
@@ -1103,8 +1114,9 @@
 
   <div id="ui">
     <strong id="appTitle">糸</strong>
+    <div id="devDayTitle">Day — · v—</div>
     <div id="personalTestProgress" class="personalTestProgress" hidden></div>
-    <span id="devDayTitle" hidden></span><br />
+    <br />
     モード: <span id="mode">—</span><br />
     GPS: <span id="gpsStatus">—</span><br />
     いまの空: <span id="liveWeather">—</span><br />
@@ -1292,8 +1304,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 29;
-    const OFFLINE_CACHE = "ito-shell-v29";
+    const APP_SHELL_VERSION = 30;
+    const OFFLINE_CACHE = "ito-shell-v30";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
