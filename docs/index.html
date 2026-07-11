@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v26</title>
+  <title>糸 — Day 12 · v27</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -208,12 +208,13 @@
     }
 
     .garmentPreview {
-      width: 88px;
-      height: 120px;
-      border-radius: 10px;
+      width: 104px;
+      height: 140px;
+      border-radius: 12px;
       overflow: hidden;
       flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.22);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25);
     }
 
     .garmentMeta {
@@ -1290,8 +1291,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 26;
-    const OFFLINE_CACHE = "ito-shell-v26";
+    const APP_SHELL_VERSION = 27;
+    const OFFLINE_CACHE = "ito-shell-v27";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -2032,7 +2033,7 @@
         morning: false
       });
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("viewBox", "0 0 104 140");
       svg.setAttribute("width", "110");
       svg.setAttribute("height", "150");
       renderGarmentPreview(svg, garment);
@@ -2055,7 +2056,7 @@
         morning: true
       });
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("viewBox", "0 0 104 140");
       svg.setAttribute("width", "110");
       svg.setAttribute("height", "150");
       renderGarmentPreview(svg, garment);
@@ -2129,7 +2130,7 @@
         const previewWrap = document.createElement("div");
         previewWrap.className = "shopPendingPreview";
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 88 120");
+        svg.setAttribute("viewBox", "0 0 104 140");
         svg.setAttribute("width", "56");
         svg.setAttribute("height", "76");
         renderGarmentPreview(svg, todayGarment);
@@ -2162,7 +2163,7 @@
       const previewWrap = document.createElement("div");
       previewWrap.className = "shopPendingPreview";
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", "0 0 88 120");
+      svg.setAttribute("viewBox", "0 0 104 140");
       svg.setAttribute("width", "56");
       svg.setAttribute("height", "76");
       renderGarmentPreview(svg, previewGarment);
@@ -2691,11 +2692,11 @@
 
     function weaveLabel(weaveType) {
       return {
-        bands: "帯",
-        panels: "長",
+        bands: "横帯",
+        panels: "縦パネル",
         lattice: "格子",
         soft: "やわらか",
-        wrap: "斜"
+        wrap: "斜め"
       }[weaveType] || "";
     }
 
@@ -2939,7 +2940,7 @@
       } else {
         preview.style.background = "transparent";
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 88 120");
+        svg.setAttribute("viewBox", "0 0 104 140");
         svg.setAttribute("width", "72");
         svg.setAttribute("height", "98");
         renderGarmentPreview(svg, garment);
@@ -3242,26 +3243,72 @@
       return entries.map(([color, weight]) => ({ color, weight }));
     }
 
+    function mixHex(hex, toward, amount) {
+      const parse = (h) => {
+        const n = h.replace("#", "");
+        const full = n.length === 3 ? n.split("").map((c) => c + c).join("") : n;
+        return [
+          parseInt(full.slice(0, 2), 16),
+          parseInt(full.slice(2, 4), 16),
+          parseInt(full.slice(4, 6), 16)
+        ];
+      };
+      try {
+        const a = parse(hex);
+        const b = parse(toward);
+        const m = (i) => Math.round(a[i] + (b[i] - a[i]) * amount);
+        return `#${[0, 1, 2].map((i) => m(i).toString(16).padStart(2, "0")).join("")}`;
+      } catch (_) {
+        return hex;
+      }
+    }
+
+    function paletteForPreview(garment) {
+      const base = garmentStripeColors(garment);
+      const seed = parseInt(String(garment.patternSeed || "0"), 16) || 0;
+      const dom = garment.dominantColor || base[0].color;
+      if (base.length >= 3) {
+        return base.map((s) => ({ color: s.color, weight: Math.max(0.08, s.weight) }));
+      }
+      const light = mixHex(dom, "#ffffff", 0.28 + (seed % 5) * 0.04);
+      const dark = mixHex(dom, "#0f172a", 0.22 + (seed % 4) * 0.05);
+      const mid = base[1] ? base[1].color : mixHex(dom, light, 0.45);
+      if (base.length === 2) {
+        return [
+          { color: base[0].color, weight: Math.max(0.28, base[0].weight) },
+          { color: base[1].color, weight: Math.max(0.22, base[1].weight) },
+          { color: dark, weight: 0.18 },
+          { color: light, weight: 0.16 }
+        ];
+      }
+      return [
+        { color: dom, weight: 0.34 },
+        { color: light, weight: 0.24 },
+        { color: dark, weight: 0.22 },
+        { color: mid, weight: 0.2 }
+      ];
+    }
+
     function appendGarmentFrame(svg, w, h) {
       const border = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       border.setAttribute("x", 0.5);
       border.setAttribute("y", 0.5);
       border.setAttribute("width", w - 1);
       border.setAttribute("height", h - 1);
-      border.setAttribute("rx", 8);
-      border.setAttribute("ry", 8);
+      border.setAttribute("rx", 10);
+      border.setAttribute("ry", 10);
       border.setAttribute("fill", "none");
-      border.setAttribute("stroke", "rgba(255,255,255,0.22)");
-      border.setAttribute("stroke-width", "1");
+      border.setAttribute("stroke", "rgba(255,255,255,0.28)");
+      border.setAttribute("stroke-width", "1.5");
       svg.appendChild(border);
     }
 
     function renderGarmentPreview(svg, garment) {
       svg.innerHTML = "";
-      const w = 88;
-      const h = 120;
+      const w = 104;
+      const h = 140;
       const weave = resolveWeaveType(garment);
-      const stripes = garmentStripeColors(garment);
+      const stripes = paletteForPreview(garment);
       const seed = parseInt(String(garment.patternSeed || "0"), 16) || 0;
 
       const clipId = `gclip_${(garment.id || "x").replace(/[^a-zA-Z0-9_-]/g, "")}_${seed % 997}`;
@@ -3273,8 +3320,8 @@
       clipRect.setAttribute("y", 0);
       clipRect.setAttribute("width", w);
       clipRect.setAttribute("height", h);
-      clipRect.setAttribute("rx", 8);
-      clipRect.setAttribute("ry", 8);
+      clipRect.setAttribute("rx", 10);
+      clipRect.setAttribute("ry", 10);
       clip.appendChild(clipRect);
       defs.appendChild(clip);
       svg.appendChild(defs);
@@ -3282,10 +3329,12 @@
       const layer = document.createElementNS("http://www.w3.org/2000/svg", "g");
       layer.setAttribute("clip-path", `url(#${clipId})`);
 
+      const totalW = stripes.reduce((sum, s) => sum + s.weight, 0) || 1;
+
       if (weave === "panels") {
         let x = 0;
-        stripes.forEach((stripe) => {
-          const sw = Math.max(4, stripe.weight * w);
+        stripes.forEach((stripe, i) => {
+          const sw = Math.max(10, (stripe.weight / totalW) * w);
           const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
           rect.setAttribute("x", x);
           rect.setAttribute("y", 0);
@@ -3293,92 +3342,103 @@
           rect.setAttribute("height", h);
           rect.setAttribute("fill", stripe.color);
           layer.appendChild(rect);
+          if (i < stripes.length - 1) {
+            const seam = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            seam.setAttribute("x", x + sw - 1.5);
+            seam.setAttribute("y", 0);
+            seam.setAttribute("width", 3);
+            seam.setAttribute("height", h);
+            seam.setAttribute("fill", "rgba(15,23,42,0.45)");
+            layer.appendChild(seam);
+          }
           x += sw;
         });
-        if (x < w) {
-          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          rect.setAttribute("x", x);
-          rect.setAttribute("y", 0);
-          rect.setAttribute("width", w - x);
-          rect.setAttribute("height", h);
-          rect.setAttribute("fill", garment.dominantColor);
-          rect.setAttribute("opacity", "0.55");
-          layer.appendChild(rect);
-        }
       } else if (weave === "lattice") {
         const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         bg.setAttribute("width", w);
         bg.setAttribute("height", h);
-        bg.setAttribute("fill", garment.dominantColor);
+        bg.setAttribute("fill", mixHex(garment.dominantColor || stripes[0].color, "#0f172a", 0.35));
         layer.appendChild(bg);
-        const cols = 3 + (seed % 2);
-        const rows = 4 + (seed % 3);
+        const cols = 4;
+        const rows = 5;
         const cellW = w / cols;
         const cellH = h / rows;
         for (let r = 0; r < rows; r++) {
           for (let c = 0; c < cols; c++) {
             const stripe = stripes[(r * cols + c + seed) % stripes.length];
             const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("x", c * cellW + 1);
-            rect.setAttribute("y", r * cellH + 1);
-            rect.setAttribute("width", Math.max(2, cellW - 2));
-            rect.setAttribute("height", Math.max(2, cellH - 2));
-            rect.setAttribute("rx", 2);
+            rect.setAttribute("x", c * cellW + 2);
+            rect.setAttribute("y", r * cellH + 2);
+            rect.setAttribute("width", Math.max(4, cellW - 4));
+            rect.setAttribute("height", Math.max(4, cellH - 4));
+            rect.setAttribute("rx", 3);
             rect.setAttribute("fill", stripe.color);
-            rect.setAttribute("opacity", (r + c) % 2 === 0 ? "0.95" : "0.72");
+            rect.setAttribute("opacity", (r + c) % 2 === 0 ? "1" : "0.7");
             layer.appendChild(rect);
           }
         }
+        for (let i = 1; i < cols; i++) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", i * cellW);
+          line.setAttribute("y1", 0);
+          line.setAttribute("x2", i * cellW);
+          line.setAttribute("y2", h);
+          line.setAttribute("stroke", "rgba(255,255,255,0.2)");
+          line.setAttribute("stroke-width", "1");
+          layer.appendChild(line);
+        }
       } else if (weave === "soft") {
-        let y = 0;
+        const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        bg.setAttribute("width", w);
+        bg.setAttribute("height", h);
+        bg.setAttribute("fill", stripes[0].color);
+        layer.appendChild(bg);
         stripes.forEach((stripe, i) => {
-          const sh = Math.max(10, stripe.weight * h);
-          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          rect.setAttribute("x", 0);
-          rect.setAttribute("y", y);
-          rect.setAttribute("width", w);
-          rect.setAttribute("height", sh + 8);
-          rect.setAttribute("fill", stripe.color);
-          rect.setAttribute("opacity", String(0.55 + (i % 3) * 0.12));
-          layer.appendChild(rect);
-          y += sh * 0.72;
+          const ellipse = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+          ellipse.setAttribute("cx", String(22 + ((seed + i * 19) % 60)));
+          ellipse.setAttribute("cy", String(28 + ((seed * 2 + i * 27) % 90)));
+          ellipse.setAttribute("rx", String(28 + (i % 3) * 8));
+          ellipse.setAttribute("ry", String(22 + (i % 2) * 10));
+          ellipse.setAttribute("fill", stripe.color);
+          ellipse.setAttribute("opacity", "0.55");
+          layer.appendChild(ellipse);
         });
-        const stayDots = Math.min(8, 2 + Math.floor((garment.totalStayMin || 0) / 2));
+        const stayDots = Math.min(10, 3 + Math.floor((garment.totalStayMin || 0) / 2));
         for (let i = 0; i < stayDots; i++) {
           const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-          const cx = 14 + ((seed + i * 17) % 60);
-          const cy = 18 + ((seed * 3 + i * 23) % 84);
-          circle.setAttribute("cx", cx);
-          circle.setAttribute("cy", cy);
-          circle.setAttribute("r", String(3 + (i % 3)));
+          circle.setAttribute("cx", String(16 + ((seed + i * 17) % 72)));
+          circle.setAttribute("cy", String(20 + ((seed * 3 + i * 23) % 100)));
+          circle.setAttribute("r", String(5 + (i % 4)));
           circle.setAttribute("fill", stripes[i % stripes.length].color);
-          circle.setAttribute("opacity", "0.85");
+          circle.setAttribute("opacity", "0.9");
+          circle.setAttribute("stroke", "rgba(255,255,255,0.25)");
+          circle.setAttribute("stroke-width", "1");
           layer.appendChild(circle);
         }
       } else if (weave === "wrap") {
         const bg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
         bg.setAttribute("width", w);
         bg.setAttribute("height", h);
-        bg.setAttribute("fill", garment.dominantColor);
+        bg.setAttribute("fill", mixHex(garment.dominantColor || stripes[0].color, "#0f172a", 0.25));
         layer.appendChild(bg);
-        const bandCount = Math.max(4, stripes.length + 2);
+        const bandCount = 7;
+        const skew = 42 + (seed % 16);
         for (let i = 0; i < bandCount; i++) {
           const stripe = stripes[i % stripes.length];
           const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-          const y0 = -20 + i * (h / (bandCount - 1));
-          const skew = 28 + (seed % 12);
+          const y0 = -40 + i * ((h + 80) / (bandCount - 1));
           path.setAttribute(
             "d",
-            `M ${-10} ${y0} L ${w + 10} ${y0 + skew} L ${w + 10} ${y0 + skew + 14} L ${-10} ${y0 + 14} Z`
+            `M ${-16} ${y0} L ${w + 16} ${y0 + skew} L ${w + 16} ${y0 + skew + 18} L ${-16} ${y0 + 18} Z`
           );
           path.setAttribute("fill", stripe.color);
-          path.setAttribute("opacity", String(0.5 + (i % 3) * 0.15));
+          path.setAttribute("opacity", i % 2 === 0 ? "0.95" : "0.65");
           layer.appendChild(path);
         }
       } else {
         let y = 0;
-        stripes.forEach((stripe) => {
-          const sh = Math.max(4, stripe.weight * h);
+        stripes.forEach((stripe, i) => {
+          const sh = Math.max(12, (stripe.weight / totalW) * h);
           const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
           rect.setAttribute("x", 0);
           rect.setAttribute("y", y);
@@ -3386,18 +3446,17 @@
           rect.setAttribute("height", sh);
           rect.setAttribute("fill", stripe.color);
           layer.appendChild(rect);
+          if (i < stripes.length - 1) {
+            const seam = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            seam.setAttribute("x", 0);
+            seam.setAttribute("y", y + sh - 1.5);
+            seam.setAttribute("width", w);
+            seam.setAttribute("height", 3);
+            seam.setAttribute("fill", "rgba(15,23,42,0.4)");
+            layer.appendChild(seam);
+          }
           y += sh;
         });
-        if (y < h) {
-          const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-          rect.setAttribute("x", 0);
-          rect.setAttribute("y", y);
-          rect.setAttribute("width", w);
-          rect.setAttribute("height", h - y);
-          rect.setAttribute("fill", garment.dominantColor);
-          rect.setAttribute("opacity", "0.5");
-          layer.appendChild(rect);
-        }
       }
 
       svg.appendChild(layer);
@@ -3444,9 +3503,9 @@
         const previewWrap = document.createElement("div");
         previewWrap.className = "garmentPreview";
         const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 88 120");
-        svg.setAttribute("width", "88");
-        svg.setAttribute("height", "120");
+        svg.setAttribute("viewBox", "0 0 104 140");
+        svg.setAttribute("width", "104");
+        svg.setAttribute("height", "140");
         renderGarmentPreview(svg, garment);
         previewWrap.appendChild(svg);
 
