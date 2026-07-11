@@ -3,43 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <meta name="theme-color" content="#17202a" />
+  <meta name="theme-color" content="#647789" />
+  <meta name="color-scheme" content="only light" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v34</title>
+  <title>糸 — Day 12 · v35</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
   <style>
     * { box-sizing: border-box; }
+    :root { color-scheme: only light; }
 
     body.memo-overlay-open {
       touch-action: auto;
     }
 
-    body {
+    html, body {
       margin: 0;
       overflow: hidden;
-      background: #17202a;
+      background: #647789;
       font-family: system-ui, sans-serif;
       color: white;
       touch-action: none;
+      color-scheme: only light;
+    }
+
+    #ambientSky {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: #647789;
+      transition: background 0.8s ease;
     }
 
     #game {
       position: relative;
+      z-index: 1;
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background-color: #1a2332;
+      background-color: transparent;
       background-image:
         linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
       background-size: 70px 70px;
-      transition: background-color 1.4s ease;
+    }
+
+    #skySwatch {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      margin-right: 6px;
+      vertical-align: -2px;
+      border: 1px solid rgba(255,255,255,0.45);
+      background: #647789;
     }
 
     #threadLayer {
@@ -1106,6 +1129,7 @@
   </style>
 </head>
 <body tabindex="0">
+  <div id="ambientSky" aria-hidden="true"></div>
   <div id="offlineBadge" hidden>オフライン — この端末の記録で動いています</div>
 
   <div id="game">
@@ -1120,7 +1144,7 @@
     <br />
     モード: <span id="mode">—</span><br />
     GPS: <span id="gpsStatus">—</span><br />
-    いまの空: <span id="liveWeather">—</span><br />
+    いまの空: <span id="skySwatch" aria-hidden="true"></span><span id="liveWeather">—</span><br />
     今日の糸: <span id="threadCount">0</span> 本<br />
     移動: <span id="distanceTotal">0</span> m<br />
     次の糸まで: <span id="nextThread">—</span>
@@ -1305,8 +1329,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 34;
-    const OFFLINE_CACHE = "ito-shell-v34";
+    const APP_SHELL_VERSION = 35;
+    const OFFLINE_CACHE = "ito-shell-v35";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -4602,18 +4626,34 @@
 
     function updateBackground() {
       const game = document.getElementById("game");
+      const skyEl = document.getElementById("ambientSky");
+      const swatch = document.getElementById("skySwatch");
+      const themeMeta = document.querySelector('meta[name="theme-color"]');
       const gridPx = GRID_M * PX_PER_M;
       const gridA = ambientGridOpacity();
-      const sky = ambientSkyColor();
+      const sky = currentView === "thread" ? ambientSkyColor() : "#17202a";
+
       game.style.backgroundSize = `${gridPx}px ${gridPx}px`;
       game.style.backgroundPosition = `${-playerX * PX_PER_M}px ${-playerY * PX_PER_M}px`;
+      // 単色は background-image にも載せ、Samsung の強制ダークで background-color だけ潰されるのを避ける
       game.style.backgroundImage =
+        `linear-gradient(${sky}, ${sky}),` +
         `linear-gradient(rgba(255,255,255,${gridA}) 1px, transparent 1px),` +
         `linear-gradient(90deg, rgba(255,255,255,${gridA}) 1px, transparent 1px)`;
-      if (currentView === "thread") {
-        game.style.setProperty("background-color", sky);
-        document.documentElement.style.backgroundColor = sky;
-        document.body.style.backgroundColor = sky;
+      game.style.backgroundColor = sky;
+
+      if (skyEl) skyEl.style.background = sky;
+      document.documentElement.style.backgroundColor = sky;
+      document.body.style.backgroundColor = sky;
+      if (swatch) swatch.style.background = sky;
+      if (themeMeta) {
+        const nums = sky.match(/\d+/g);
+        const hex = sky.startsWith("#")
+          ? sky
+          : nums && nums.length >= 3
+            ? rgbToHex(Number(nums[0]), Number(nums[1]), Number(nums[2]))
+            : "#647789";
+        themeMeta.setAttribute("content", hex);
       }
     }
 
