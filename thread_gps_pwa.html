@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v36</title>
+  <title>糸 — Day 12 · v37</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1337,8 +1337,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 36;
-    const OFFLINE_CACHE = "ito-shell-v36";
+    const APP_SHELL_VERSION = 37;
+    const OFFLINE_CACHE = "ito-shell-v37";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -4738,16 +4738,14 @@
 
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          gpsStatusEl.textContent = "OK";
+          const { latitude, longitude, accuracy, speed } = pos.coords;
+          gpsStatusEl.textContent = accuracy ? `±${Math.round(accuracy)}m` : "OK";
           requestScreenWakeLock();
-          if (typeof latitude === "number" && typeof longitude === "number") {
-            refreshLiveWeather(latitude, longitude, true);
-          }
+          refreshLiveWeather(latitude, longitude, true);
           const pipHint = supportsDocumentPip()
             ? ""
             : " 他アプリへ切り替えると記録が止まることがあります（PWAではPiP不可）。";
           messageEl.textContent = "GPS開始 — 画面を開いたまま歩いてください。" + pipHint;
-          const { latitude, longitude, accuracy, speed } = pos.coords;
           const meters = latLngToMeters(latitude, longitude);
           processGpsPosition(
             meters.x,
