@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v31</title>
+  <title>糸 — Day 12 · v32</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -39,6 +39,7 @@
         linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
       background-size: 70px 70px;
+      transition: background-color 1.4s ease;
     }
 
     #threadLayer {
@@ -1304,8 +1305,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 31;
-    const OFFLINE_CACHE = "ito-shell-v31";
+    const APP_SHELL_VERSION = 32;
+    const OFFLINE_CACHE = "ito-shell-v32";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1521,6 +1522,7 @@
     let lastLiveWeatherFetchAt = 0;
     let liveWeatherInFlight = false;
     let liveWeatherLabel = null;
+    let liveWeatherMood = null;
     const TIME_BAND_COLORS = {
       morning: "#7dd3fc",
       day: "#fde047",
@@ -2038,9 +2040,11 @@
         if (typeof code !== "number") return;
         const moodInfo = weatherMoodFromCode(code);
         const tempText = typeof temp === "number" ? `${Math.round(temp * 10) / 10}℃` : "—";
+        liveWeatherMood = moodInfo.mood;
         liveWeatherLabel = `${moodInfo.label} · ${tempText}`;
         liveWeatherEl.textContent = liveWeatherLabel;
         lastLiveWeatherFetchAt = Date.now();
+        updateBackground();
       } catch (_) {
         if (!liveWeatherLabel) liveWeatherEl.textContent = "取得できず";
       } finally {
@@ -4257,6 +4261,7 @@
           ? "雨の日は WASD で試せます。晴れたら GPS"
           : "WASD で歩く。0:00 に自動で紡がれます";
         renderThreads();
+        updateBackground();
       }
     }
 
@@ -4545,11 +4550,46 @@
       nextThreadEl.textContent = `${remain.toFixed(1)} m / ${minMove.toFixed(1)} m`;
     }
 
+    function mixRgb(a, b, t) {
+      const u = Math.max(0, Math.min(1, t));
+      return {
+        r: Math.round(a.r + (b.r - a.r) * u),
+        g: Math.round(a.g + (b.g - a.g) * u),
+        b: Math.round(a.b + (b.b - a.b) * u)
+      };
+    }
+
+    function ambientSkyColor(date = new Date()) {
+      const base = { r: 26, g: 35, b: 50 };
+      const accent = hexToRgb(getInterpolatedTimeColor(date));
+      let mixed = mixRgb(base, accent, 0.22);
+
+      const mood = liveWeatherMood;
+      if (mood === "rain") {
+        mixed = mixRgb(mixed, { r: 14, g: 20, b: 32 }, 0.4);
+      } else if (mood === "storm") {
+        mixed = mixRgb(mixed, { r: 18, g: 14, b: 34 }, 0.45);
+      } else if (mood === "clear") {
+        mixed = mixRgb(mixed, { r: 42, g: 58, b: 78 }, 0.28);
+      } else if (mood === "cloudy") {
+        mixed = mixRgb(mixed, { r: 40, g: 46, b: 56 }, 0.32);
+      } else if (mood === "fog") {
+        mixed = mixRgb(mixed, { r: 52, g: 56, b: 64 }, 0.38);
+      } else if (mood === "snow") {
+        mixed = mixRgb(mixed, { r: 58, g: 66, b: 82 }, 0.36);
+      }
+
+      return `rgb(${mixed.r}, ${mixed.g}, ${mixed.b})`;
+    }
+
     function updateBackground() {
       const game = document.getElementById("game");
       const gridPx = GRID_M * PX_PER_M;
       game.style.backgroundSize = `${gridPx}px ${gridPx}px`;
       game.style.backgroundPosition = `${-playerX * PX_PER_M}px ${-playerY * PX_PER_M}px`;
+      if (currentView === "thread") {
+        game.style.backgroundColor = ambientSkyColor();
+      }
     }
 
     function gpsBlockedReason() {
@@ -4933,6 +4973,9 @@
         refreshLiveWeather(meta.lastLat, meta.lastLng, true);
       }
     }
+    window.setInterval(() => {
+      if (currentView === "thread") updateBackground();
+    }, 60000);
 
     if ("serviceWorker" in navigator && window.isSecureContext) {
       /* registered in setupServiceWorkerUpdates */
