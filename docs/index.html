@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v50</title>
+  <title>糸 — Day 12 · v51</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -129,9 +129,10 @@
 
     :root {
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --nav-bottom: max(10px, var(--safe-bottom));
-      --nav-height: 52px;
-      --above-nav: calc(var(--nav-bottom) + var(--nav-height) + 10px);
+      --nav-bottom: max(12px, var(--safe-bottom));
+      --nav-height: 56px;
+      --toast-gap: 22px;
+      --above-nav: calc(var(--nav-bottom) + var(--nav-height) + var(--toast-gap));
     }
 
     #message {
@@ -1202,16 +1203,40 @@
 
     #shopPurchaseFlash {
       margin: 0 0 12px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       border-radius: 12px;
       background: rgba(74, 222, 128, 0.18);
-      border: 1px solid rgba(74, 222, 128, 0.4);
+      border: 1px solid rgba(74, 222, 128, 0.45);
       color: #bbf7d0;
       font-size: 14px;
-      line-height: 1.4;
+      line-height: 1.45;
+      font-weight: 600;
+      animation: shopFlashIn 0.4s ease;
+    }
+
+    #shopPurchaseFlash.pass {
+      background: rgba(148, 163, 184, 0.16);
+      border-color: rgba(148, 163, 184, 0.42);
+      color: #e2e8f0;
     }
 
     #shopPurchaseFlash[hidden] { display: none !important; }
+
+    @keyframes shopFlashIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .garmentCard.justSold {
+      box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.65), 0 8px 24px rgba(74, 222, 128, 0.18);
+      transition: box-shadow 0.35s ease;
+    }
+
+    .garmentCard.justPassed {
+      opacity: 0.72;
+      box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.35);
+      transition: opacity 0.35s ease, box-shadow 0.35s ease;
+    }
 
     .npcCardAbsent {
       opacity: 0.42;
@@ -1431,8 +1456,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 50;
-    const OFFLINE_CACHE = "ito-shell-v50";
+    const APP_SHELL_VERSION = 51;
+    const OFFLINE_CACHE = "ito-shell-v51";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1964,8 +1989,16 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       renderShop();
       if (result?.bought) {
         const name = ensureGarmentDisplayName(result.garment);
-        const msg = `購入が成立 — ${fresh.name}が「${name}」を買った`;
-        flashShopPurchase(msg);
+        const reasonLabel = ({
+          color: "色に惹かれた",
+          weave: "柄に惹かれた",
+          stay: "余白の感じに惹かれた",
+          distance: "道のりの感じに惹かれた",
+          weather: "空の模様に惹かれた",
+          mood: "今日の気分で"
+        })[result.reason] || "今日の気分で";
+        const msg = `${fresh.name}が購入 — 「${name}」（${reasonLabel}）`;
+        flashShopPurchase(msg, { kind: "buy", garmentId: result.garment.id });
         messageEl.textContent = msg;
         // 購入した来客はリストから外す
         const meta = loadMeta();
@@ -1979,16 +2012,32 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
         });
         if (currentView !== "shop") switchView("shop");
         else renderShop();
+        highlightShopGarment(result.garment.id, "justSold");
         return;
       }
       const profile = getNpcProfile(fresh);
-      messageEl.textContent = `${fresh.name}は、今日は選ばなかった`;
       const passHint = ans.reaction === "cool" ? "whim" : (result?.passHint || "pass");
+      const passLine = profile.browsePass ? profile.browsePass(passHint) : profile.noUnsold;
+      const passMsg = `${fresh.name}は見送り — また別の日に`;
+      flashShopPurchase(passMsg, { kind: "pass", garmentId: fitting.garmentId });
+      messageEl.textContent = passMsg;
       showDialogueLine({
         speaker: fresh.name,
-        text: profile.browsePass ? profile.browsePass(passHint) : profile.noUnsold
+        text: passLine
       });
       dialogueChoicesEl.innerHTML = "";
+      const again = document.createElement("button");
+      again.type = "button";
+      again.textContent = "わかった";
+      again.addEventListener("click", () => {
+        dialogueChoicesEl.innerHTML = "";
+        if (currentView === "shop") renderShop();
+      });
+      dialogueChoicesEl.appendChild(again);
+      if (currentView === "shop") {
+        renderShop();
+        highlightShopGarment(fitting.garmentId, "justPassed");
+      }
     }
 
 
@@ -3642,13 +3691,31 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       return loadResidents().filter((r) => r.type === "npc" && ids.includes(r.id));
     }
 
-    function flashShopPurchase(text) {
+    function flashShopPurchase(text, options = {}) {
       if (!shopPurchaseFlashEl) return;
+      const kind = options.kind === "pass" ? "pass" : "buy";
       shopPurchaseFlashEl.hidden = false;
+      shopPurchaseFlashEl.classList.toggle("pass", kind === "pass");
       shopPurchaseFlashEl.textContent = text;
+      // 再トリガー用にアニメを振り直し
+      shopPurchaseFlashEl.style.animation = "none";
+      void shopPurchaseFlashEl.offsetWidth;
+      shopPurchaseFlashEl.style.animation = "";
+      try {
+        shopPurchaseFlashEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } catch (_) {}
+      const holdMs = kind === "pass" ? 7000 : 9000;
       window.setTimeout(() => {
         if (shopPurchaseFlashEl.textContent === text) shopPurchaseFlashEl.hidden = true;
-      }, 8000);
+      }, holdMs);
+    }
+
+    function highlightShopGarment(garmentId, className) {
+      if (!garmentId || !garmentListEl) return;
+      const card = garmentListEl.querySelector(`[data-garment-id="${garmentId}"]`);
+      if (!card) return;
+      card.classList.add(className);
+      window.setTimeout(() => card.classList.remove(className), 4200);
     }
 
     function getDayOfWeekName(date = new Date()) {
@@ -5093,6 +5160,7 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
         list.forEach((garment) => {
           const card = document.createElement("div");
           card.className = "garmentCard";
+          card.dataset.garmentId = garment.id;
           const isToday = garment.date === getLocalDateString();
 
           const previewWrap = document.createElement("div");
