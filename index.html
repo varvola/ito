@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v51</title>
+  <title>糸 — Day 12 · v52</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1456,8 +1456,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 51;
-    const OFFLINE_CACHE = "ito-shell-v51";
+    const APP_SHELL_VERSION = 52;
+    const OFFLINE_CACHE = "ito-shell-v52";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -2624,6 +2624,39 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       return null;
     }
 
+    function pickBandSamplesFromSegments(daySegments) {
+      const buckets = { morning: [], day: [], evening: [], night: [] };
+      (daySegments || []).forEach((s) => {
+        if (!s.from || typeof s.from.lat !== "number" || typeof s.from.lng !== "number") return;
+        const at = new Date(s.endedAt || s.startedAt || Date.now());
+        if (Number.isNaN(at.getTime())) return;
+        const key = getTimeBandKey(at);
+        buckets[key].push(s);
+      });
+      const samples = {};
+      Object.keys(buckets).forEach((key) => {
+        const segs = buckets[key];
+        if (!segs.length) {
+          samples[key] = null;
+          return;
+        }
+        const mid = segs[Math.floor(segs.length / 2)];
+        samples[key] = {
+          lat: mid.from.lat,
+          lng: mid.from.lng,
+          count: segs.length,
+          weight: segs.reduce((sum, s) => sum + (Number(s.distanceM) || 0) + (Number(s.staySec) || 0) / 60, 0)
+        };
+      });
+      return samples;
+    }
+
+    function pickPrimaryWeatherSample(samples, daySegments) {
+      const ranked = Object.values(samples || {}).filter(Boolean).sort((a, b) => (b.weight || b.count) - (a.weight || a.count));
+      if (ranked.length) return { lat: ranked[0].lat, lng: ranked[0].lng };
+      return pickLatLngFromSegments(daySegments);
+    }
+
     function weatherMoodFromCode(code) {
       const c = Number(code);
       if (Number.isNaN(c)) return { mood: "clear", label: "晴れ" };
@@ -2653,6 +2686,26 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       const keys = Object.keys(meta.weatherCache).sort();
       while (keys.length > 40) {
         delete meta.weatherCache[keys.shift()];
+      }
+      saveMeta(meta);
+    }
+
+    function hourlyCacheKey(dateStr, lat, lng) {
+      return `${dateStr}|${Number(lat).toFixed(2)}|${Number(lng).toFixed(2)}`;
+    }
+
+    function getCachedHourlyWeather(dateStr, lat, lng) {
+      const meta = loadMeta();
+      return (meta.weatherHourlyCache && meta.weatherHourlyCache[hourlyCacheKey(dateStr, lat, lng)]) || null;
+    }
+
+    function setCachedHourlyWeather(dateStr, lat, lng, payload) {
+      const meta = loadMeta();
+      if (!meta.weatherHourlyCache) meta.weatherHourlyCache = {};
+      meta.weatherHourlyCache[hourlyCacheKey(dateStr, lat, lng)] = payload;
+      const keys = Object.keys(meta.weatherHourlyCache).sort();
+      while (keys.length > 24) {
+        delete meta.weatherHourlyCache[keys.shift()];
       }
       saveMeta(meta);
     }
@@ -2699,17 +2752,155 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       return null;
     }
 
+    async function fetchHourlyWeather(lat, lng, dateStr) {
+      const cached = getCachedHourlyWeather(dateStr, lat, lng);
+      if (cached?.hours?.length) return cached;
+      if (!navigator.onLine) return null;
+
+      const params = new URLSearchParams({
+        latitude: String(lat),
+        longitude: String(lng),
+        start_date: dateStr,
+        end_date: dateStr,
+        hourly: "weather_code,temperature_2m",
+        timezone: "auto"
+      });
+      const urls = [
+        `https://api.open-meteo.com/v1/forecast?${params}`,
+        `https://archive-api.open-meteo.com/v1/archive?${params}`
+      ];
+
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const data = await res.json();
+          const times = data?.hourly?.time || [];
+          const codes = data?.hourly?.weather_code || [];
+          const temps = data?.hourly?.temperature_2m || [];
+          if (!times.length) continue;
+          const hours = times.map((t, i) => ({
+            at: t,
+            code: typeof codes[i] === "number" ? codes[i] : null,
+            tempC: typeof temps[i] === "number" ? Math.round(temps[i] * 10) / 10 : null
+          })).filter((h) => h.code != null);
+          if (!hours.length) continue;
+          const payload = { hours, fetchedAt: new Date().toISOString() };
+          setCachedHourlyWeather(dateStr, lat, lng, payload);
+          return payload;
+        } catch (_) {}
+      }
+      return null;
+    }
+
+    function modeWeatherCode(codes) {
+      const tally = {};
+      codes.forEach((c) => {
+        tally[c] = (tally[c] || 0) + 1;
+      });
+      return Object.entries(tally).sort((a, b) => b[1] - a[1])[0]?.[0];
+    }
+
+    function weatherDramaRank(mood) {
+      return ({ storm: 6, rain: 5, snow: 4, fog: 3, cloudy: 2, clear: 1 })[mood] || 0;
+    }
+
+    function buildWeatherByBand(hourly, samples) {
+      if (!hourly?.hours?.length) return null;
+      const byBand = {};
+      const bandHours = { morning: [], day: [], evening: [], night: [] };
+      hourly.hours.forEach((h) => {
+        const at = new Date(h.at);
+        if (Number.isNaN(at.getTime())) return;
+        bandHours[getTimeBandKey(at)].push(h);
+      });
+      Object.keys(bandHours).forEach((key) => {
+        const sample = samples?.[key];
+        if (!sample) return;
+        const rows = bandHours[key];
+        if (!rows.length) return;
+        const code = Number(modeWeatherCode(rows.map((r) => r.code)));
+        if (Number.isNaN(code)) return;
+        const temps = rows.map((r) => r.tempC).filter((t) => typeof t === "number");
+        const moodInfo = weatherMoodFromCode(code);
+        byBand[key] = {
+          code,
+          mood: moodInfo.mood,
+          label: moodInfo.label,
+          tempC: temps.length
+            ? Math.round((temps.reduce((a, b) => a + b, 0) / temps.length) * 10) / 10
+            : null,
+          lat: sample.lat,
+          lng: sample.lng,
+          count: sample.count
+        };
+      });
+      return Object.keys(byBand).length ? byBand : null;
+    }
+
+    function summarizeWeatherByBand(byBand) {
+      if (!byBand) return null;
+      const names = { morning: "朝", day: "昼", evening: "夕", night: "夜" };
+      const entries = ["morning", "day", "evening", "night"]
+        .map((k) => (byBand[k] ? { key: k, ...byBand[k], name: names[k] } : null))
+        .filter(Boolean);
+      if (!entries.length) return null;
+      const moods = new Set(entries.map((e) => e.mood));
+      if (moods.size === 1) {
+        const e = entries[0];
+        return `一日 ${e.label}${typeof e.tempC === "number" ? ` · ${e.tempC}℃` : ""}`;
+      }
+      return entries.map((e) => `${e.name}${e.label}`).join(" · ");
+    }
+
+    function pickDominantBandWeather(byBand, samples) {
+      if (!byBand) return null;
+      const entries = Object.entries(byBand).map(([key, w]) => ({
+        key,
+        ...w,
+        score: (samples?.[key]?.weight || samples?.[key]?.count || 1) + weatherDramaRank(w.mood) * 8
+      }));
+      entries.sort((a, b) => b.score - a.score);
+      return entries[0] || null;
+    }
+
     async function enrichGarmentWithWeather(garment, daySegments) {
-      if (!garment || garment.weatherMood) return garment;
-      const sample = pickLatLngFromSegments(daySegments);
-      if (!sample) return garment;
-      const weather = await fetchDailyWeather(sample.lat, sample.lng, garment.date);
-      if (!weather) return garment;
+      if (!garment || garment.weatherByBand) return garment;
+      const samples = pickBandSamplesFromSegments(daySegments);
+      const primary = pickPrimaryWeatherSample(samples, daySegments);
+      if (!primary) return garment;
+
+      let byBand = null;
+      const hourly = await fetchHourlyWeather(primary.lat, primary.lng, garment.date);
+      if (hourly) byBand = buildWeatherByBand(hourly, samples);
+
+      let weather = null;
+      if (byBand) {
+        weather = pickDominantBandWeather(byBand, samples);
+      }
+      if (!weather) {
+        const daily = await fetchDailyWeather(primary.lat, primary.lng, garment.date);
+        if (!daily) return garment;
+        weather = daily;
+        byBand = {
+          day: {
+            code: daily.code,
+            mood: daily.mood,
+            label: daily.label,
+            tempC: daily.tempC,
+            lat: primary.lat,
+            lng: primary.lng,
+            count: 1
+          }
+        };
+      }
 
       garment.weatherCode = weather.code;
       garment.tempC = weather.tempC;
       garment.weatherMood = weather.mood;
-      garment.weatherLabel = weather.label;
+      garment.weatherLabel = summarizeWeatherByBand(byBand) || weather.label;
+      garment.weatherByBand = byBand;
+      garment.weatherSample = { lat: primary.lat, lng: primary.lng };
 
       const list = loadGarments();
       const idx = list.findIndex((g) => g.id === garment.id || g.date === garment.date);
@@ -2719,7 +2910,9 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
           weatherCode: garment.weatherCode,
           tempC: garment.tempC,
           weatherMood: garment.weatherMood,
-          weatherLabel: garment.weatherLabel
+          weatherLabel: garment.weatherLabel,
+          weatherByBand: garment.weatherByBand,
+          weatherSample: garment.weatherSample
         };
         saveGarmentsList(list);
         garments = list;
@@ -2733,11 +2926,12 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
     async function backfillMissingWeather(limit = 4) {
       if (!navigator.onLine) return;
       const list = loadGarments()
-        .filter((g) => !g.weatherMood)
+        .filter((g) => !g.weatherByBand)
         .sort((a, b) => b.date.localeCompare(a.date))
         .slice(0, limit);
       for (const garment of list) {
-        await enrichGarmentWithWeather(garment, []);
+        const daySegments = loadSegmentsForDate(garment.date);
+        await enrichGarmentWithWeather(garment, daySegments);
       }
     }
 
@@ -3230,6 +3424,8 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
         garment.tempC = existing.tempC;
         garment.weatherMood = existing.weatherMood;
         garment.weatherLabel = existing.weatherLabel;
+        garment.weatherByBand = existing.weatherByBand || null;
+        garment.weatherSample = existing.weatherSample || null;
       }
       const list = loadGarments().filter((g) => g.date !== dateStr);
       list.push(garment);
@@ -5182,7 +5378,9 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
             糸 ${garment.segmentCount} 本 / 移動 ${garment.totalDistanceM} m<br />
             主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分 · 柄 ${weaveLabel(resolveWeaveType(garment))}${
               garment.weatherLabel
-                ? `<br />天気 ${garment.weatherLabel}${typeof garment.tempC === "number" ? ` · ${garment.tempC}℃` : ""}`
+                ? `<br />空模様 ${garment.weatherLabel}${
+                    !garment.weatherByBand && typeof garment.tempC === "number" ? ` · ${garment.tempC}℃` : ""
+                  }`
                 : ""
             }
           `;
