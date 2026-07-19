@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 11 · v38</title>
+  <title>糸 — Day 12 · v39</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -684,10 +684,10 @@
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 16px;
-      padding: 14px 16px 12px;
-      min-width: 148px;
-      max-width: 168px;
-      flex: 1 1 148px;
+      padding: 12px 12px 10px;
+      min-width: 120px;
+      max-width: 148px;
+      flex: 1 1 120px;
       cursor: pointer;
       transition: border-color 0.15s ease, background 0.15s ease;
       color: inherit;
@@ -1336,9 +1336,9 @@
     const PX_PER_M = 14;
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
-    const DEV_SESSION_DAY = 11;
-    const APP_SHELL_VERSION = 38;
-    const OFFLINE_CACHE = "ito-shell-v38";
+    const DEV_SESSION_DAY = 12;
+    const APP_SHELL_VERSION = 39;
+    const OFFLINE_CACHE = "ito-shell-v39";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1443,6 +1443,10 @@
         name: "マスター",
         personality: "gentle",
         preferredColors: ["#a78bfa", "#7dd3fc"],
+        preferredWeaves: ["soft", "bands"],
+        likesStay: true,
+        buyThreshold: 0.55,
+        passWhim: 0.1,
         currentGarmentId: null
       },
       {
@@ -1451,13 +1455,69 @@
         name: "ソラ",
         personality: "sarcastic",
         preferredColors: ["#fb923c", "#fde047"],
+        preferredWeaves: ["panels", "wrap"],
+        likesDistance: true,
+        buyThreshold: 0.6,
+        passWhim: 0.14,
+        currentGarmentId: null
+      },
+      {
+        id: "npc_mio",
+        type: "npc",
+        name: "ミオ",
+        personality: "warm",
+        preferredColors: ["#7dd3fc", "#fde047"],
+        preferredWeaves: ["soft", "wrap"],
+        likesStay: true,
+        preferredWeather: ["clear", "cloudy"],
+        buyThreshold: 0.68,
+        passWhim: 0.12,
+        currentGarmentId: null
+      },
+      {
+        id: "npc_kai",
+        type: "npc",
+        name: "カイ",
+        personality: "quiet",
+        preferredColors: ["#a78bfa", "#fb923c"],
+        preferredWeaves: ["lattice", "panels"],
+        likesDistance: true,
+        preferredWeather: ["rain", "cloudy", "fog"],
+        buyThreshold: 0.64,
+        passWhim: 0.16,
         currentGarmentId: null
       }
     ];
 
+    function purchaseLineForReason(map, name, reason) {
+      const key = reason && map[reason] ? reason : "mood";
+      return map[key](name);
+    }
+
+    function browsePassLineForHint(map, hint) {
+      const key = hint && map[hint] ? hint : "pass";
+      return map[key];
+    }
+
     const NPC_DIALOGUE_PROFILES = {
       gentle: {
-        postPurchase: (name) => `「${name}」…服屋で見つけた。着てみるね。`,
+        postPurchase: (name, reason) => purchaseLineForReason({
+          color: (n) => `「${n}」…この色に惹かれた。着てみるね。`,
+          weave: (n) => `「${n}」…この柄の感じが、静かに残ってて。着てみる。`,
+          stay: (n) => `「${n}」…ゆったりした時間の気配があるね。着てみるよ。`,
+          distance: (n) => `「${n}」…よく歩いた一日の感じがする。着てみるね。`,
+          weather: (n) => `「${n}」…この空の模様、今日の気分に合う。`,
+          mood: (n) => `「${n}」…服屋で見つけた。着てみるね。`
+        }, name, reason),
+        browsePass: (hint) => browsePassLineForHint({
+          color: "…色の流れが、今日はあと一歩。また来るね。",
+          weave: "…柄の感じが、今日はしっくりこなくて。また来るよ。",
+          stay: "…今日は、もっと余白のある服を探してたのかも。",
+          distance: "…今日は、道のりの感じが違う服を見ていた。",
+          weather: "…空の模様が、今日の服とは別の話だった。",
+          whim: "…今日は見るだけにしておく。気になるのはあったけど。",
+          pass: "…今日はしっくりくるのがなかった。また来るよ。"
+        }, hint),
         stay: (name) => `「${name}」…このあたり、じっとしてた時間があるね。急がない一日の、痕跡みたいだ。`,
         color: (name) => `この色、好きなんだ。「${name}」、着てみたら、なんだか落ち着く。`,
         wearing: (name) => `…昨日、あなたの一日が、この服になったんだ。「${name}」、着てみたら落ち着く。`,
@@ -1486,7 +1546,23 @@
         }
       },
       sarcastic: {
-        postPurchase: (name) => `「${name}」…服屋にあった。着るよ。…文句ある？`,
+        postPurchase: (name, reason) => purchaseLineForReason({
+          color: (n) => `「${n}」…この色、悪くない。着るよ。…文句ある？`,
+          weave: (n) => `「${n}」…柄が怠けてて好き。着る。褒めてる、たぶん。`,
+          stay: (n) => `「${n}」…止まってた時間、服に残ってる。着るよ。`,
+          distance: (n) => `「${n}」…けっこう歩いた一日だろ。着る。…認めるよ。`,
+          weather: (n) => `「${n}」…空の模様が乗ってる。今日の気分に合う。着る。`,
+          mood: (n) => `「${n}」…服屋にあった。着るよ。…文句ある？`
+        }, name, reason),
+        browsePass: (hint) => browsePassLineForHint({
+          color: "…色は惜しい。でも今日は見送り。また来る。",
+          weave: "…柄は気になった。買うほどじゃない。…今日は。",
+          stay: "…余白待ちの服を探してた。今日は違った。",
+          distance: "…道のり感が違う。また今度。",
+          weather: "…空模様が、今日の服と噛み合わなかった。",
+          whim: "…買うか迷った。今日はやめとく。…来るかもしれない。",
+          pass: "…今日は見るだけ。また来る。…来るかもしれない。"
+        }, hint),
         stay: (name) => `「${name}」…けっこう止まってたね。…別に褒めてない。止まった時間も、服にはなるんだろ。`,
         color: (name) => `この色、悪くないじゃん。「${name}」、着ると妙に素直な気分になる。…気のせいかも。`,
         wearing: (name) => `…あなたの一日が服になったって？ はは、まあそういうことにしておく。「${name}」、悪くないよ。`,
@@ -1513,6 +1589,96 @@
           "また話そう": "…うん。また。暇なときに。",
           "いい色だね": "…色は認める。服も、まあ悪くない。",
           "そうだね": "…うん。その一日が、こうして残る。…悪くない。"
+        }
+      },
+      warm: {
+        postPurchase: (name, reason) => purchaseLineForReason({
+          color: (n) => `「${n}」…あ、この色。朝の光みたい。着てみてもいい？`,
+          weave: (n) => `「${n}」…やわらかい柄だね。好き。着てみる。`,
+          stay: (n) => `「${n}」…立ち止まってた時間、温かいかも。着てみるね。`,
+          distance: (n) => `「${n}」…歩いた一日が、やさしく残ってる。着てみる。`,
+          weather: (n) => `「${n}」…空の感じ、今日と似てる。着てみるね。`,
+          mood: (n) => `「${n}」…服屋で目が留まったの。着てみるね。`
+        }, name, reason),
+        browsePass: (hint) => browsePassLineForHint({
+          color: "…色は好きだけど、今日は別の服を探してたみたい。また来るね。",
+          weave: "…柄はいいのに、今日はしっくりこなくて。またね。",
+          stay: "…もっと余白のある服、探してたのかも。また来るよ。",
+          distance: "…道のりの感じが違うね。また今度。",
+          weather: "…空の話が、今日の服とは少し違った。",
+          whim: "…迷ったけど、今日は見るだけ。また来るね。",
+          pass: "…今日はしっくりこなかった。また来るね。"
+        }, hint),
+        stay: (name) => `「${name}」…ここに、立ち止まってた時間があるね。あったかい一日の、しるしみたい。`,
+        color: (name) => `この色、好き。「${name}」、着てると朝みたいに明るい気分。`,
+        wearing: (name) => `…あなたの一日が、服になってるんだ。「${name}」、着てて嬉しい。`,
+        default: (dow, h) => {
+          if (h < 9) return `…${dow}曜の朝。光がやさしいね。`;
+          if (h < 17) return `…${dow}曜日。ここにいると落ち着く。`;
+          return `…${dow}曜の夜。今日も、急がなくていいよ。`;
+        },
+        emptyShop: "…服屋、まだ静かだね。",
+        noUnsold: "…今日は見るだけ。また来るね。",
+        replies: {
+          "似合ってるよ": { reply: "…えへ。ありがとう。あなたの一日が、こうして続いてる。", followUps: ["こちらこそ", "また話そう"] },
+          "どんなところが気に入った？": { reply: "やわらかいところかな。急がない感じが、好き。", followUps: ["いい色だね", "また話そう"] },
+          "うん、少し": { reply: "…待ってた時間も、ちゃんと残ってるんだね。", followUps: ["そうだね", "また話そう"] },
+          "その時間も糸になった": { reply: "…うん。太い糸、あったかい。", followUps: ["そうだね", "また話そう"] },
+          "選んでくれてありがとう": { reply: "…こちらこそ。着られて嬉しい。", followUps: ["こちらこそ", "また話そう"] },
+          "似合いそう": { reply: "…着てみた。なんだか、朝みたい。", followUps: ["服屋で確認する", "また話そう"] },
+          "服屋で確認する": { action: "open_shop" },
+          "うん": { reply: "…また話そうね。", followUps: [] }
+        },
+        followUps: {
+          "こちらこそ": "…うん。また、ここで会おう。",
+          "また話そう": "…うん。急がなくていいよ。",
+          "いい色だね": "…うん。この色、好き。",
+          "そうだね": "…うん。その一日が、こうして残る。"
+        }
+      },
+      quiet: {
+        postPurchase: (name, reason) => purchaseLineForReason({
+          color: (n) => `「${n}」…この色。残る。着てみる。`,
+          weave: (n) => `「${n}」…柄の線がいい。着てみる。`,
+          stay: (n) => `「${n}」…止まった時間が、濃い。着てみる。`,
+          distance: (n) => `「${n}」…長い道のりが、ここにある。着てみる。`,
+          weather: (n) => `「${n}」…空の気配が乗ってる。着てみる。`,
+          mood: (n) => `「${n}」…目が止まった。着てみる。`
+        }, name, reason),
+        browsePass: (hint) => browsePassLineForHint({
+          color: "…色は近い。今日は、まだ。",
+          weave: "…柄は気になる。今日は見送る。",
+          stay: "…余白が、もう少し欲しかった。また来る。",
+          distance: "…道のりの濃さが違う。また。",
+          weather: "…空の話が、今日は別だった。",
+          whim: "…迷った。今日は見ない。",
+          pass: "…今日は、見送り。また来る。"
+        }, hint),
+        stay: (name) => `「${name}」…止まった時間が、残ってる。急がない一日の、芯みたいだ。`,
+        color: (name) => `この色、好きだ。「${name}」、着ると静かになる。`,
+        wearing: (name) => `…あなたの一日が、この服だ。「${name}」。悪くない。`,
+        default: (dow, h) => {
+          if (h < 9) return `…${dow}曜の朝。まだ静かだ。`;
+          if (h < 17) return `…${dow}曜日。ここにいる。`;
+          return `…${dow}曜の夜。急がなくていい。`;
+        },
+        emptyShop: "…服屋、空だ。",
+        noUnsold: "…今日は見るだけ。また来る。",
+        replies: {
+          "似合ってるよ": { reply: "…ありがとう。あなたの一日が、ここにある。", followUps: ["こちらこそ", "また話そう"] },
+          "どんなところが気に入った？": { reply: "線の感じ。急がない余白。", followUps: ["いい色だね", "また話そう"] },
+          "うん、少し": { reply: "…止まった時間も、糸になる。そうだね。", followUps: ["そうだね", "また話そう"] },
+          "その時間も糸になった": { reply: "…太い糸は、残る。", followUps: ["そうだね", "また話そう"] },
+          "選んでくれてありがとう": { reply: "…着られて、よかった。", followUps: ["こちらこそ", "また話そう"] },
+          "似合いそう": { reply: "…着てみた。静かだ。", followUps: ["服屋で確認する", "また話そう"] },
+          "服屋で確認する": { action: "open_shop" },
+          "うん": { reply: "…また。", followUps: [] }
+        },
+        followUps: {
+          "こちらこそ": "…また、ここで。",
+          "また話そう": "…うん。急がなくていい。",
+          "いい色だね": "…この色、残る。",
+          "そうだね": "…その一日が、残る。"
         }
       }
     };
@@ -3061,12 +3227,12 @@
       };
     }
 
-    function getPostPurchaseDialogue(npc, garment) {
+    function getPostPurchaseDialogue(npc, garment, reason = "mood") {
       const name = ensureGarmentDisplayName(garment);
       const profile = getNpcProfile(npc);
       return {
         id: "purchase",
-        lines: [{ speaker: npc.name, text: profile.postPurchase(name) }],
+        lines: [{ speaker: npc.name, text: profile.postPurchase(name, reason) }],
         choices: ["似合いそう", "服屋で確認する"]
       };
     }
@@ -3156,7 +3322,7 @@
       activeNpcId = npc.id;
       const garment = getGarmentById(npc.currentGarmentId);
       activeDialogue = options.afterPurchase && garment
-        ? getPostPurchaseDialogue(npc, garment)
+        ? getPostPurchaseDialogue(npc, garment, options.purchaseReason || "mood")
         : getDialogueForNpc(npc);
       showDialogueLine(activeDialogue.lines[0]);
       showDialogueChoices(activeDialogue.choices, "opening", npc);
@@ -3282,13 +3448,21 @@
       const result = tryNpcPurchase(npc.id);
       renderHangout();
       renderShop();
-      if (result) {
+      if (result?.bought) {
         const name = ensureGarmentDisplayName(result.garment);
         messageEl.textContent = `${npc.name}が「${name}」を選んだ — 服屋で「着用中」を確認`;
-        startHangoutDialogue({ afterPurchase: true, npcId: npc.id });
+        startHangoutDialogue({
+          afterPurchase: true,
+          npcId: npc.id,
+          purchaseReason: result.reason
+        });
       } else {
-        messageEl.textContent = "今日は、新しい服は選ばれなかった";
-        showDialogueLine({ speaker: npc.name, text: profile.noUnsold });
+        const hint = result?.passHint || "pass";
+        messageEl.textContent = `${npc.name}は、今日は選ばなかった`;
+        showDialogueLine({
+          speaker: npc.name,
+          text: profile.browsePass ? profile.browsePass(hint) : profile.noUnsold
+        });
         dialogueChoicesEl.innerHTML = "";
       }
     }
@@ -3330,15 +3504,46 @@
     }
 
     function scoreGarmentForNpc(garment, npc) {
-      let score = Math.random() * 0.35;
+      const reasons = [];
+      let score = 0;
       const breakdown = garment.colorBreakdown || {};
-      npc.preferredColors.forEach((color) => {
-        score += (breakdown[color] || 0) * 2;
+      let colorPts = 0;
+      (npc.preferredColors || []).forEach((color) => {
+        colorPts += (breakdown[color] || 0) * 2;
       });
-      if (npc.preferredColors.includes(garment.dominantColor)) {
-        score += 0.45;
+      if ((npc.preferredColors || []).includes(garment.dominantColor)) {
+        colorPts += 0.45;
       }
-      return score;
+      if (colorPts > 0) {
+        score += colorPts;
+        reasons.push({ id: "color", w: colorPts });
+      }
+
+      const weave = garment.weaveType || null;
+      if (weave && (npc.preferredWeaves || []).includes(weave)) {
+        score += 0.55;
+        reasons.push({ id: "weave", w: 0.55 });
+      }
+
+      if (npc.likesStay && (garment.totalStayMin || 0) >= 2) {
+        score += 0.5;
+        reasons.push({ id: "stay", w: 0.5 });
+      }
+      if (npc.likesDistance && (garment.totalDistanceM || 0) >= 150) {
+        score += 0.5;
+        reasons.push({ id: "distance", w: 0.5 });
+      }
+      if (garment.weatherMood && (npc.preferredWeather || []).includes(garment.weatherMood)) {
+        score += 0.4;
+        reasons.push({ id: "weather", w: 0.4 });
+      }
+
+      score += Math.random() * 0.28;
+      reasons.sort((a, b) => b.w - a.w);
+      return {
+        score,
+        reason: reasons[0]?.id || "mood"
+      };
     }
 
     function tryNpcPurchase(npcId = "npc_master") {
@@ -3354,37 +3559,66 @@
       const npc = residentList.find((r) => r.id === npcId);
       if (!npc) return null;
 
-      let best = candidates[0];
-      let bestScore = -1;
-      candidates.forEach((garment) => {
-        const score = scoreGarmentForNpc(garment, npc);
-        if (score > bestScore) {
-          bestScore = score;
-          best = garment;
-        }
+      const scored = candidates.map((garment) => {
+        const { score, reason } = scoreGarmentForNpc(garment, npc);
+        return { garment, score, reason };
       });
+      scored.sort((a, b) => b.score - a.score);
+      const best = scored[0];
+      const threshold = typeof npc.buyThreshold === "number" ? npc.buyThreshold : 0.6;
+      const whim = typeof npc.passWhim === "number" ? npc.passWhim : 0.12;
+
+      if (best.score < threshold) {
+        return {
+          bought: false,
+          npc,
+          passHint: best.reason === "mood" ? "pass" : best.reason,
+          bestGarment: best.garment,
+          score: best.score
+        };
+      }
+
+      if (Math.random() < whim && best.score < threshold + 0.45) {
+        return {
+          bought: false,
+          npc,
+          passHint: "whim",
+          bestGarment: best.garment,
+          score: best.score
+        };
+      }
 
       const purchase = {
         id: `purchase_${Date.now()}`,
-        garmentId: best.id,
+        garmentId: best.garment.id,
         buyerId: npcId,
         buyerType: "npc",
+        reason: best.reason,
         purchasedAt: new Date().toISOString()
       };
       purchaseList.push(purchase);
       savePurchases(purchaseList);
-      npc.currentGarmentId = best.id;
+      npc.currentGarmentId = best.garment.id;
       saveResidents(residentList);
 
-      return { npc, garment: best, purchase };
+      return {
+        bought: true,
+        npc,
+        garment: best.garment,
+        purchase,
+        reason: best.reason
+      };
     }
 
     function getNpcProfile(npc) {
-      return NPC_DIALOGUE_PROFILES[npc.personality || "gentle"];
+      return NPC_DIALOGUE_PROFILES[npc.personality || "gentle"] || NPC_DIALOGUE_PROFILES.gentle;
     }
 
     function getNpcPersonalityLabel(npc) {
       if (npc.personality === "sarcastic") return "皮肉屋";
+      if (npc.personality === "warm") return "おだやか";
+      if (npc.personality === "quiet") return "無口め";
+      if (npc.personality === "gentle") return "やさしい";
       return "";
     }
 
@@ -3414,6 +3648,20 @@
           resident.preferredColors = [...def.preferredColors];
           changed = true;
         }
+        if (!resident.preferredWeaves && def.preferredWeaves) {
+          resident.preferredWeaves = [...def.preferredWeaves];
+          changed = true;
+        }
+        if (!resident.preferredWeather && def.preferredWeather) {
+          resident.preferredWeather = [...def.preferredWeather];
+          changed = true;
+        }
+        ["likesStay", "likesDistance", "buyThreshold", "passWhim"].forEach((key) => {
+          if (resident[key] === undefined && def[key] !== undefined) {
+            resident[key] = def[key];
+            changed = true;
+          }
+        });
       });
       if (changed) saveResidents(stored);
     }
@@ -3454,7 +3702,12 @@
         texts.push(getDialogueForNpc(wearingNpc, { ...baseGarment, totalStayMin: 5 }).lines[0].text);
         texts.push(getDialogueForNpc(wearingNpc, { ...baseGarment, dominantColor: "#a78bfa" }).lines[0].text);
         texts.push(getDialogueForNpc(wearingNpc, baseGarment).lines[0].text);
-        texts.push(getPostPurchaseDialogue(wearingNpc, baseGarment).lines[0].text);
+        texts.push(getPostPurchaseDialogue(wearingNpc, baseGarment, "color").lines[0].text);
+        texts.push(getPostPurchaseDialogue(wearingNpc, baseGarment, "stay").lines[0].text);
+        texts.push(profile.browsePass("pass"));
+        texts.push(profile.browsePass("whim"));
+        texts.push(profile.emptyShop);
+        texts.push(profile.noUnsold);
       });
       return texts;
     }
