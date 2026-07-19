@@ -1,4 +1,4 @@
-const CACHE = "ito-shell-v45";
+const CACHE = "ito-shell-v46";
 const SHELL_PATH = "./thread_gps_pwa.html";
 const PRECACHE = [
   SHELL_PATH,
@@ -26,12 +26,12 @@ const OFFLINE_STUB = `<!doctype html>
   <h1>糸 — オフライン起動できません</h1>
   <p>この端末にアプリ本体がまだ保存されていません。</p>
   <ol>
-    <li>家の Wi‑Fi に接続する</li>
-    <li>PC で <code>serve_https.py</code> を起動する</li>
-    <li>アプリを開き「オフライン起動を準備」をタップ</li>
-    <li>次からは <strong>ホーム画面のアイコン</strong> から開く（ブラウザのURL欄では不可）</li>
+    <li>ネットに接続する（家の Wi‑Fi かモバイル回線）</li>
+    <li><a href="https://varvola.github.io/ito/thread_gps_pwa.html" style="color:#7dd3fc">本番URL</a>を開く</li>
+    <li>「強制更新」または「オフライン準備」をタップ</li>
+    <li>次からは <strong>ホーム画面のアイコン</strong> から開く</li>
   </ol>
-  <p>記録は端末内に残っています。準備が終われば Wi‑Fi なしでも開けます。</p>
+  <p>記録は端末内に残っています。準備が終わればオフラインでも開けます。</p>
 </body>
 </html>`;
 
@@ -60,11 +60,36 @@ function offlineStubResponse() {
 }
 
 function cacheShellResponse(cache, request, response) {
-  if (!response || response.status !== 200 || response.type !== "basic") return;
+  if (!response || response.status !== 200) return Promise.resolve();
+  // opaque/cors でも本体HTMLは basic のはず。失敗時は握りつぶさない
+  if (response.type !== "basic" && response.type !== "cors" && response.type !== "default") {
+    return Promise.resolve();
+  }
   return Promise.all([
     cache.put(request, response.clone()),
     cache.put(SHELL_PATH, response.clone())
   ]);
+}
+
+async function matchAnyItoShell(request) {
+  const keys = await caches.keys();
+  const itoKeys = keys
+    .filter((k) => k.startsWith("ito-shell-"))
+    .sort()
+    .reverse();
+  // 新しいキャッシュを優先し、だめなら古い版の本体を返す
+  for (const key of itoKeys) {
+    const cache = await caches.open(key);
+    const hit = await matchShell(cache, request);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+async function currentCacheHasShell() {
+  const cache = await caches.open(CACHE);
+  const hit = await cache.match(SHELL_PATH, { ignoreSearch: true });
+  return !!hit;
 }
 
 function respondShell(request) {
@@ -79,7 +104,7 @@ function respondShell(request) {
 
     try {
       const response = await fetchFresh(request);
-      if (response && response.status === 200 && response.type === "basic") {
+      if (response && response.status === 200) {
         await cacheShellResponse(cache, request, response);
         return response;
       }
@@ -87,16 +112,27 @@ function respondShell(request) {
 
     const retry = await matchShell(cache, request);
     if (retry) return retry;
+
+    // 新キャッシュが空でも、旧 ito-shell-* があれば起動を優先
+    const legacy = await matchAnyItoShell(request);
+    if (legacy) return legacy;
+
     return offlineStubResponse();
   });
 }
 
 async function precacheAll(cache) {
+  let shellOk = false;
   for (const url of PRECACHE) {
     try {
-      await cache.add(url);
+      const response = await fetchFresh(url);
+      if (response && response.status === 200) {
+        await cache.put(url, response.clone());
+        if (url === SHELL_PATH) shellOk = true;
+      }
     } catch (_) {}
   }
+  return shellOk;
 }
 
 self.addEventListener("install", (event) => {
@@ -108,11 +144,19 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    // 新本体が入ってから古いキャッシュを消す。空キャッシュで詰まるのを防ぐ
+    const ready = await currentCacheHasShell();
+    if (ready) {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((k) => k !== CACHE && k.startsWith("ito-shell-"))
+          .map((k) => caches.delete(k))
+      );
+    }
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener("message", (event) => {
