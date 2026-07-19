@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v46</title>
+  <title>糸 — Day 12 · v47</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -127,19 +127,34 @@
 
     #devDayTitle[hidden] { display: none !important; }
 
+    :root {
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-bottom: max(10px, var(--safe-bottom));
+      --nav-height: 52px;
+      --above-nav: calc(var(--nav-bottom) + var(--nav-height) + 10px);
+    }
+
     #message {
       position: fixed;
       left: 50%;
-      bottom: 24px;
+      bottom: var(--above-nav);
       transform: translateX(-50%);
-      z-index: 20;
-      background: rgba(0,0,0,0.75);
-      padding: 10px 16px;
-      border-radius: 999px;
+      z-index: 28;
+      background: rgba(0,0,0,0.78);
+      padding: 10px 14px;
+      border-radius: 14px;
       font-size: 13px;
       font-weight: 600;
+      line-height: 1.45;
       text-align: center;
-      max-width: calc(100vw - 32px);
+      max-width: calc(100vw - 28px);
+      pointer-events: none;
+    }
+
+    /* 会話中は下部トーストを隠してタブ／台詞優先 */
+    body:has(#dialogueBox:not([hidden])) #message {
+      opacity: 0;
+      visibility: hidden;
     }
 
     #actions {
@@ -150,6 +165,9 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
 
     button {
@@ -190,9 +208,9 @@
     #nav {
       position: fixed;
       left: 50%;
-      bottom: 72px;
+      bottom: var(--nav-bottom);
       transform: translateX(-50%);
-      z-index: 25;
+      z-index: 30;
       display: flex;
       gap: 8px;
       background: rgba(0,0,0,0.6);
@@ -364,7 +382,7 @@
       position: fixed;
       left: 12px;
       right: 12px;
-      bottom: 72px;
+      bottom: var(--above-nav);
       z-index: 30;
       display: none;
       align-items: center;
@@ -383,7 +401,7 @@
       position: fixed;
       left: 12px;
       right: 12px;
-      bottom: 120px;
+      bottom: calc(var(--above-nav) + 58px);
       z-index: 31;
       display: none;
       align-items: center;
@@ -732,7 +750,7 @@
       position: fixed;
       left: 12px;
       right: 12px;
-      bottom: 78px;
+      bottom: var(--above-nav);
       z-index: 28;
       background: rgba(12, 16, 24, 0.94);
       border: 1px solid rgba(255,255,255,0.16);
@@ -939,13 +957,12 @@
       opacity: 0.82;
     }
 
-    body.personal-test-mode:not(.dev-tools-visible) #devActions,
-    body.personal-test-mode:not(.dev-tools-visible) #personalTestStartButton,
-    body.personal-test-mode:not(.dev-tools-visible) #hangoutResetPurchasesButton {
-      display: none !important;
-    }
-
-    body:not(.personal-test-mode) #testMemoButton {
+    /* 日常は開発・自用テストUIを隠す。「糸」タイトルを長押しで再表示 */
+    body:not(.dev-tools-visible) #devActions,
+    body:not(.dev-tools-visible) #personalTestStartButton,
+    body:not(.dev-tools-visible) #testMemoButton,
+    body:not(.dev-tools-visible) #hangoutResetPurchasesButton,
+    body:not(.dev-tools-visible) #personalTestProgress {
       display: none !important;
     }
 
@@ -1236,12 +1253,13 @@
 
   <div id="actions">
     <button id="gpsButton" type="button">GPS開始</button>
-    <button id="personalTestStartButton" type="button" class="secondary">14日テストを始める</button>
     <button id="installHomeButton" type="button" class="secondary">ホームに追加</button>
     <button id="exportBackupButton" type="button" class="secondary">記録を書き出す</button>
     <button id="importBackupButton" type="button" class="secondary">記録を読み込む</button>
     <button id="importClipboardButton" type="button" class="secondary">記録を貼り付け</button>
     <button id="offlinePrepActionButton" type="button" class="secondary">オフライン準備</button>
+    <button id="forceReloadButton" type="button" class="secondary">強制更新</button>
+    <button id="personalTestStartButton" type="button" class="secondary">14日テストを始める</button>
     <button id="testMemoButton" type="button" class="secondary">テストメモ</button>
     <div id="devActions">
       <button id="spinTestButton" type="button">今日を紡ぐ</button>
@@ -1250,7 +1268,6 @@
       <button id="colorDemoButton" type="button" class="secondary">色見本</button>
       <button id="resetButton" type="button">今日リセット</button>
       <button id="resetPurchasesButton" type="button" class="secondary">購入リセット</button>
-      <button id="forceReloadButton" type="button" class="secondary">強制更新</button>
     </div>
     <input id="importBackupInput" type="file" accept="application/json,.json" hidden />
   </div>
@@ -1414,8 +1431,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 46;
-    const OFFLINE_CACHE = "ito-shell-v46";
+    const APP_SHELL_VERSION = 47;
+    const OFFLINE_CACHE = "ito-shell-v47";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -5119,7 +5136,8 @@ const ITO_BEAT_WEATHER_BIAS = {"rain_listen":{"rain":3.5,"storm":3.0,"fog":1.6},
       meta.ftueDone = true;
       saveMeta(meta);
       hideFtue();
-      showPersonalTestReady();
+      // 14日テスト導線は日常UIから外した（「糸」長押し→開発ツールから開始可）
+      messageEl.textContent = "散歩のあと、明日の朝に服屋へ";
     }
 
     function startPersonalTest() {
@@ -5376,6 +5394,11 @@ const ITO_BEAT_WEATHER_BIAS = {"rain_listen":{"rain":3.5,"storm":3.0,"fog":1.6},
         offlinePrepBannerButtonEl.disabled = false;
         if (ok) {
           messageEl.textContent = "オフライン準備OK — WiFiを切ってホームのアイコンから開けます";
+          window.setTimeout(() => {
+            if (messageEl.textContent.startsWith("オフライン準備OK")) {
+              messageEl.textContent = "右下のタブで服屋・たむろへ";
+            }
+          }, 4200);
           await refreshOfflinePrepUi();
         } else {
           offlinePrepActionButtonEl.textContent = "オフライン準備";
