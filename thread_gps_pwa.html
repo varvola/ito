@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v44</title>
+  <title>糸 — Day 12 · v45</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1415,7 +1415,7 @@
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
     const APP_SHELL_VERSION = 44;
-    const OFFLINE_CACHE = "ito-shell-v44";
+    const OFFLINE_CACHE = "ito-shell-v45";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1527,6 +1527,7 @@
         preferredColors: ["#a78bfa", "#7dd3fc"],
         preferredWeaves: ["soft", "bands"],
         likesStay: true,
+        preferredWeather: ["clear", "cloudy"],
         buyThreshold: 0.55,
         passWhim: 0.1,
         autonomousVisitChance: 0.5,
@@ -1541,6 +1542,7 @@
         preferredColors: ["#fb923c", "#fde047"],
         preferredWeaves: ["panels", "wrap"],
         likesDistance: true,
+        preferredWeather: ["rain", "cloudy", "storm"],
         buyThreshold: 0.6,
         passWhim: 0.14,
         autonomousVisitChance: 0.42,
@@ -1808,6 +1810,8 @@
     const ITO_LIFE_BEATS = {"npc_master":[{"id":"tea_stock","tag":"仕入れの帰り","open":["…お茶の仕入れ、終わってね。袋が重くて、ここに座り込んだ。","…仕入れの帰りだ。君がいるなら、少し休ませてもらうよ。","…仕入れ袋、置いていいかな。君に会えて、肩が下りた。"],"choices":[{"label":"お疲れさま","next":"rest"},{"label":"何を仕入れてきたの？","next":"detail"},{"label":"ゆっくりして","next":"rest"}],"nodes":{"rest":{"text":["…ありがとう。こういう休みが、いちばん効く。","…うん。急がない時間が、店にもいいんだ。","…ここにいると、仕入れの疲れがほどける。"],"choices":[{"label":"また寄ってね","end":true,"affinity":2,"shop":4},{"label":"新しい布の話、聞きたい","next":"cloth"}]},"detail":{"text":["…茶葉と、少し布も。季節の気配が混ざる仕入れだった。","…お茶が主だけど、布屋にも寄った。色が気になってね。","…君の一日が服になる店の隣で、布を触ってきたよ。"],"choices":[{"label":"色、どんなだった？","next":"cloth"},{"label":"お茶の話もっと聞きたい","end":true,"affinity":3,"shop":3}]},"cloth":{"text":["…青みがかった糸が残っててね。君の一日の服、店に並んでるだろ。覗きたくなった。","…布を触ってたら、店の服が気になってきた。今度、ゆっくり見てみようかな。","…君が紡いだ一日、店で見てみたくなった。仕入れのついでに、ね。"],"choices":[{"label":"見ていってほしい","action":"nudge_shop","shop":26,"affinity":2},{"label":"また今度でいいよ","end":true,"affinity":2,"shop":8}]}}},{"id":"quiet_open","tag":"開店前の掃除","open":["…店の掃除、早めに終わらせた。埃より、静けさのほうが残る。","…掃除のついでに、ここに寄った。君がいるか確かめたくて。","…開店前の空気が好きでね。君と、同じ空気を吸いたかった。"],"choices":[{"label":"静かだね","next":"air"},{"label":"今日も開店？","next":"open_day"},{"label":"会えてよかった","next":"air"}],"nodes":{"air":{"text":["…うん。急がない朝は、服の色もやさしく見える気がする。","…静かだと、一日の糸がよく見える。君の一日も、ね。","…この静けさのあとだと、店の服が特別に見えるんだ。"],"choices":[{"label":"店、見てみる？","action":"nudge_shop","shop":22,"affinity":2},{"label":"このままでいい","end":true,"affinity":3,"shop":5}]},"open_day":{"text":["…うん。誰かが寄ってくれる日も、そうでない日もある。","…開店するよ。君の一日が並んでるなら、なおさら。","…開ける。君が来てくれるなら、仕込みに意味が出る。"],"choices":[{"label":"あとで店に寄るね","action":"nudge_shop","shop":20,"affinity":2},{"label":"がんばって","end":true,"affinity":2,"shop":6}]}}},{"id":"rain_listen","tag":"雨宿り","open":["…雨が強くて、逃げ込んだ。傘より、人の気配が欲しかった。","…雨宿りだ。君がいるなら、濡れてもよかったかも。","…雨音を聴きたくて寄った。君の声も、同じくらい落ち着く。"],"choices":[{"label":"雨、やむまでいよう","next":"stay"},{"label":"服、濡れなかった？","next":"clothes"},{"label":"温かいものいる？","next":"stay"}],"nodes":{"stay":{"text":["…ありがとう。この時間も、糸になるんだろうね。","…うん。急がない雨宿りは、一日の余白だ。","…ここにいると、雨がやさしく聞こえる。"],"choices":[{"label":"やんだら店も見ていって","action":"nudge_shop","shop":18,"affinity":2},{"label":"ゆっくりして","end":true,"affinity":3,"shop":4}]},"clothes":{"text":["…幸い乾いてる。でも、乾いた服を見るたびに、店の新しい服が気になるね。","…濡れてないよ。むしろ、乾いた布の感触で店が恋しくなった。","…大丈夫。雨の日の服、店にあるだろ。覗きたくなった。"],"choices":[{"label":"見ていって","action":"nudge_shop","shop":24,"affinity":2},{"label":"雨がやんでからで","end":true,"affinity":2,"shop":7}]}}}],"npc_sora":[{"id":"detour","tag":"遠回りしてきた","open":["…遠回りしてきた。用もないのに。…用はある、ここにいることだ。","…寄り道だ。効率悪いだろ？ …悪くていい日もある。","…遠回り。お前がいるか確認したかっただけだ。…嘘じゃない。"],"choices":[{"label":"遠回り、悪くない","next":"ok"},{"label":"何してたの？","next":"what"},{"label":"会えてよかった","next":"ok"}],"nodes":{"ok":{"text":["…そう言えよ。…まあ、言わなくても分かってた。","…悪くない、か。はは。お前の一日も、遠回りして服になってるだろ。","…ここにいる理由ができた。遠回り、正解だった。"],"choices":[{"label":"店も遠回りで寄る？","action":"nudge_shop","shop":20,"affinity":2},{"label":"また遠回りして","end":true,"affinity":3,"shop":5}]},"what":{"text":["…窓の色を見てた。夕方のオレンジ。店の服に、似た色あったよな。","…何もしてない。何もしない用事だ。…服屋の前は通ったけどな。","…駅まで行って戻った。ついでに店の灯りが見えた。気になった。"],"choices":[{"label":"灯り、見に行ってみて","action":"nudge_shop","shop":24,"affinity":2},{"label":"何もしないのもいい","end":true,"affinity":2,"shop":6}]}}},{"id":"complaint","tag":"愚痴を吐きに","open":["…愚痴、聞いてくれ。聞かないなら帰る。…残るけど。","…今日の客、変な注文してきた。吐き捨てに来た。","…愚痴る相手が欲しかった。お前でいいか？ …いい、だろ。"],"choices":[{"label":"聞くよ","next":"vent"},{"label":"大変だったね","next":"vent"},{"label":"吐き捨てていいよ","next":"vent"}],"nodes":{"vent":{"text":["…はあ。言ったら軽くなった。お前の一日の服、変な注文よりよっぽど正直だ。","…愚痴ったら腹減った。店の服見て、気分変えようかな。","…吐き終わった。次は、まともな布が欲しい。店、覗くか。"],"choices":[{"label":"覗いてみて","action":"nudge_shop","shop":22,"affinity":2},{"label":"まだ聞いてるよ","end":true,"affinity":3,"shop":5}]}}},{"id":"night_smoke","tag":"夜風に当たる","open":["…夜風、当たってる。煙は無し。空気だけ吸う。","…夜だ。用はない。いること自体が用事だ。","…風が冷たい。お前の声で、少し温めろ。…冗談。"],"choices":[{"label":"冷えるね","next":"cold"},{"label":"夜更かし？","next":"late"},{"label":"そばにいるよ","next":"cold"}],"nodes":{"cold":{"text":["…冷える。厚手の服、欲しくなる夜だな。店にあったっけ。","…お前がいると、冷え方が違う。…店の服も、そういう役割だろ。","…風が強い。布の一枚が恋しい。覗いてくる。"],"choices":[{"label":"店、行ってみて","action":"nudge_shop","shop":23,"affinity":2},{"label":"ここで温まって","end":true,"affinity":3,"shop":6}]},"late":{"text":["…更かしてる。眠れない夜は、色の濃い服が欲しくなる。","…夜更かし認定か。認める。店の灯りも、まだ気になる。","…遅い時間の特権だ。お前と、服の話をする特権。"],"choices":[{"label":"灯り、見に行こう","action":"nudge_shop","shop":21,"affinity":2},{"label":"もう少しここにいよう","end":true,"affinity":3,"shop":4}]}}}],"npc_mio":[{"id":"flower","tag":"花を見てきた","open":["…道端の花、見てきたの。色がやさしくて…あなたに話したくて寄った。","…花屋の前で立ち止まってた。香りが残ってる。…気づく？","…花を見てたら、あなたの一日の色を思い出した。変かな。"],"choices":[{"label":"どんな花？","next":"kind"},{"label":"やさしい色だね","next":"soft"},{"label":"話してくれて嬉しい","next":"soft"}],"nodes":{"kind":{"text":["…白いのと、薄い青。服にしたら、朝みたいになりそう。","…小さな黄。あなたの昼の糸に近いかも、って思った。","…名前は知らない。でも、店の服に似た色だった。"],"choices":[{"label":"店で色、探してみて","action":"nudge_shop","shop":25,"affinity":2},{"label":"花の話、もっと聞きたい","end":true,"affinity":3,"shop":6}]},"soft":{"text":["…えへ。言えてよかった。やさしいものって、着たくもなるよね。","…ありがとう。花のあとだと、新しい服が欲しくなっちゃう。","…あなたの前だと、気持ちが花みたいに開く。店、見に行こうかな。"],"choices":[{"label":"見ていってほしい","action":"nudge_shop","shop":24,"affinity":2},{"label":"このままでいよう","end":true,"affinity":3,"shop":5}]}}},{"id":"letter","tag":"手紙を出してきた","open":["…郵便、出してきたの。宛名を書いてたら、誰かに会いたくなった。","…手紙のついでに寄った。切手より、あなたの顔が先に浮かんだ。","…ポストの前で迷ってた。寄っていい日だって、自分に許可したの。"],"choices":[{"label":"会えてよかった","next":"glad"},{"label":"手紙、大事な人？","next":"who"},{"label":"寄ってくれてありがとう","next":"glad"}],"nodes":{"glad":{"text":["…うん。会えたら、服のことも話したくなった。一日が形になってる店、あるでしょ。","…嬉しい。手紙のあとは、新しい布が欲しくなる不思議。","…ここにくると落ち着く。店の服も、同じ気持ちで見られそう。"],"choices":[{"label":"店、覗いてみて","action":"nudge_shop","shop":22,"affinity":2},{"label":"もう少し話そう","end":true,"affinity":3,"shop":5}]},"who":{"text":["…家族。元気だよって短く書いた。短い言葉ほど、服みたいに残るよね。","…秘密。…あなたには、ここにいるって書けそう。","…大事な人。でも今は、あなたの一日の服が気になってる。"],"choices":[{"label":"気になるなら見ていって","action":"nudge_shop","shop":23,"affinity":2},{"label":"秘密、守るよ","end":true,"affinity":3,"shop":4}]}}},{"id":"morning_walk","tag":"朝の散歩","open":["…朝の散歩、長くしちゃった。光がきれいで…あなたに見せたくて。","…朝ごはん前に歩いてた。お腹より、話したくなった。","…朝風がやさしくて。このまま、あなたのそばまで来た。"],"choices":[{"label":"朝の光、いいね","next":"light"},{"label":"歩けてよかったね","next":"walk"},{"label":"おはよう","next":"light"}],"nodes":{"light":{"text":["…光の色、服にしたら可愛いと思う。店、朝のうちに見ようかな。","…あなたがいる朝は、特別。新しい服も、特別に見える気がする。","…おはよう。朝のついでに、店も覗いていいかな。"],"choices":[{"label":"覗いていって","action":"nudge_shop","shop":24,"affinity":2},{"label":"朝の話、続けよう","end":true,"affinity":3,"shop":5}]},"walk":{"text":["…歩けた。歩いた一日が服になるって、素敵だよね。見に行きたくなった。","…散歩の延長で、店まで歩きたい気分。","…足がむずむずする。服屋まで、もう少し歩こうかな。"],"choices":[{"label":"行ってみて","action":"nudge_shop","shop":23,"affinity":2},{"label":"ここで一息ついて","end":true,"affinity":2,"shop":6}]}}}],"npc_kai":[{"id":"map","tag":"地図を畳んだあと","open":["…地図、畳んだ。道は決まってる。ここに寄る道も。","…道順を確認してた。寄り道の座標が、ここだった。","…地図より、あなたの位置が正確だ。来た。"],"choices":[{"label":"道、迷わなかった？","next":"way"},{"label":"寄れてよかった","next":"here"},{"label":"静かにいよう","next":"here"}],"nodes":{"way":{"text":["…迷ってない。寄り道は、意図。店の前も通った。灯りが残ってた。","…道は一つじゃない。服の色も、一つじゃない。見たくなった。","…迷うなら、布の間で迷いたい。店に行く。"],"choices":[{"label":"灯り、見に行って","action":"nudge_shop","shop":22,"affinity":2},{"label":"ここで休んで","end":true,"affinity":3,"shop":5}]},"here":{"text":["…よかった。言葉は少ない。居る、で足りる。","…ここにいる。次は、店にいる番かも。","…静かにいよう。あとで、布を見に行く。"],"choices":[{"label":"布、見に行ってみて","action":"nudge_shop","shop":20,"affinity":2},{"label":"もう少し、ここに","end":true,"affinity":3,"shop":4}]}}},{"id":"library","tag":"本を返してきた","open":["…本、返してきた。ページの余白が、服の余白に似てた。","…図書館の帰り。静かな場所のあとは、ここに来る。","…本を閉じた。次に開きたいのは、布の話。"],"choices":[{"label":"何の本？","next":"book"},{"label":"余白、好きなの？","next":"margin"},{"label":"静かなあとだね","next":"margin"}],"nodes":{"book":{"text":["…地図の本。線が多い。店の格子柄に、似てる。","…詩。短い。服の名前みたいに、残る。","…技術書。理解したあとに、欲しくなるものがある。服も。"],"choices":[{"label":"柄、見に行ってみて","action":"nudge_shop","shop":23,"affinity":2},{"label":"本の話、続けて","end":true,"affinity":3,"shop":5}]},"margin":{"text":["…余白が好き。急がない布が、欲しくなる。","…静かさのあとだと、新しい服がはっきり見える。","…余白の次は、触れるもの。店へ。"],"choices":[{"label":"触りに行って","action":"nudge_shop","shop":24,"affinity":2},{"label":"余白、ここに置こう","end":true,"affinity":3,"shop":4}]}}},{"id":"signal","tag":"信号待ちの延長","open":["…信号、青になった。でも、足がここに向いた。","…待ち時間の延長。赤でも青でも、ここに止まる。","…信号の色より、あなたの色が気になった。来た。"],"choices":[{"label":"止まってくれてありがとう","next":"stop"},{"label":"どちらへ行く途中？","next":"going"},{"label":"青、待ってるよ","next":"stop"}],"nodes":{"stop":{"text":["…止まった。止まり方にも、一日がある。服にも。","…ありがとう。次の青で、店に寄るかもしれない。","…止まったまま、布の話をしたい。"],"choices":[{"label":"寄ってみて","action":"nudge_shop","shop":21,"affinity":2},{"label":"まだ赤でいい","end":true,"affinity":3,"shop":5}]},"going":{"text":["…用事は済んだ。残りは、自由。店も自由。","…帰り。寄り道の許可を、自分に出した。","…どこへも行かない。ここから、店へ。"],"choices":[{"label":"自由に覗いてみて","action":"nudge_shop","shop":22,"affinity":2},{"label":"帰りの前に、もう少し","end":true,"affinity":2,"shop":6}]}}}]};
 
 
+const ITO_WEATHER_SPICE = {"gentle":{"moods":{"clear":["…晴れだね。仕入れ袋も、少し軽く感じる。","…この晴れ、君と分けるとちょうどいい温度になる。","…晴れてる。君の顔がよく見える日は、店の色もよく見える。"],"cloudy":["…くもり。急がなくていい空だ。","…くもりの下だと、茶の香りが長く残る。君も、そう？","…くもり空の隣に君がいると、開店前みたいに落ち着く。"],"fog":["…霧だ。輪郭がにじむ朝は、声だけはっきりさせたい。","…霧のなか、君の声が先に届く。不思議だね。","…霧でも、君のいる場所はぼやけない。"],"rain":["…雨音が、袋の布より先に届いた。","…雨宿りの席、君がいるなら余ってない。","…雨の日に会えると、仕入れの疲れがほどける。"],"snow":["…雪の気配。白い糸みたいだ。","…雪だと、君の一日の色がよけい残る気がする。","…雪の静けさと、君の静けさが似てる。"],"storm":["…空が荒れてる。無理しなくていいよ。","…雷のあいだは、ここにいよう。君がいるなら尚更。","…嵐の日も、君のそばは開店できる。"]},"temps":{"cold":["…冷えるね。温かい杯が恋しい。","…寒い日は、君の返事が毛布みたいだ。","…この寒さ、君と分け合うと薄まる。"],"cool":["…少し肌寒い。歩きやすい気温だ。","…涼しさが、会話の間を整えてくれる。","…この涼しさ、君といると上品に感じる。"],"mild":["…過ごしやすいね。用事にも会話にもいい。","…温和な気温。君のペースに合わせやすい。","…この気温だと、長居したくなる。君のせいでもある。"],"hot":["…暑いね。お茶を薄めにしたくなる日だ。","…暑さで言葉が短くなる。君がいると、それでも足りる。","…暑い日のたむろは、君がいるだけで店になる。"]}},"sarcastic":{"moods":{"clear":["…晴れか。遠回りには眩しすぎるだろ。","…晴れだ。お前の顔も、余計にはっきりするな。","…快晴。お前がいると、文句の質が上がる。"],"cloudy":["…くもり。まあ、遠回り向きだ。","…くもり空。お前の皮肉と相性いいだろ。","…くもり。お前と愚痴る天気としては合格だ。"],"fog":["…霧か。視界悪いのに、ここに来る方向だけ分かった。","…霧のなかお前探しは、効率最悪。…来たけどな。","…霧でもお前の位置はバグってない。便利だ。"],"rain":["…雨だ。愚痴の含水率、上がるな。","…雨宿り認定で残る。お前がいるなら尚更。","…雨の日のお前は、傘より役に立つ。"],"snow":["…雪？ 珍しいな。文句のレパートリー増える。","…雪だ。白いのに、会話は黒いまま行こうぜ。","…雪の日に会うと、遠回りが正解に見える。"],"storm":["…雷だ。帰る判断、正しいだろ。…残るけど。","…嵐の日にお前、正気か。…こっちもな。","…雷鳴より、お前の短い返事のほうが耳に残る。"]},"temps":{"cold":["…冷える。厚手欲しくなる夜だ。","…寒い。お前の温度、貸してみろ。…冗談。","…この寒さ、お前がいると計算が狂う。"],"cool":["…肌寒い。遠回りにはちょうどいい。","…涼しい。文句がよく乾く気温だ。","…涼しさのせいだ、お前に長くいるのは。"],"mild":["…平凡な気温。平凡な用事。…お前は例外。","…温和だな。会話も、まあ温和でいい。","…この気温、お前といると寄り道が正解になる。"],"hot":["…暑い。愚痴が蒸発する前に言え。","…暑すぎ。お前の返答、短くて助かる。","…暑い日のお前は、氷代わりだ。…褒めてる。"]}},"warm":{"moods":{"clear":["…晴れ。光がやさしくて、話したくなった。","…この晴れ、あなたに見せたくて寄り道したの。","…晴れてる。あなたの隣だと、光が倍になる。"],"cloudy":["…くもり空。柔らかい色だね。","…くもりだと、声が近く聞こえる気がする。","…くもりの下であなたがいると、花より安心する。"],"fog":["…霧…輪郭が溶ける。だから、名前を呼びたくなる。","…霧のなか、あなたの気配を先に拾った。","…霧でも、あなたはにじまない。"],"rain":["…雨の音、好き。あなたの声も、同じくらい。","…雨宿り、できた。あなたがいたから。","…雨の日に会えると、手紙より残る。"],"snow":["…雪…白い余白。あなたの一日に似合いそう。","…雪だね。静かすぎて、あなたのほうを見ちゃう。","…雪のせいじゃないよ。会いたくなっただけ。"],"storm":["…空が騒がしい。ここにいていい？","…雷、苦手気味。あなたがいると呼吸できる。","…嵐のあいだは、あなたの温度で足りる。"]},"temps":{"cold":["…冷えるね。手、しまってる？","…寒い日は、あなたの返事が欲しくなる。","…この寒さ、あなたがいると物語になる。"],"cool":["…肌寒い朝。歩きたくなる気温。","…涼しさが、会話を丁寧にしてくれる。","…この涼しさ、あなたの隣だと宝物。"],"mild":["…ちょうどいい気温。花も人も開きやすい。","…温和だね。あなたと話すのに最適。","…この気温、長居の許可が出る。あなたがいるから。"],"hot":["…暑いね。言葉、とろけそう。","…暑さのなかでも、あなたに会えてよかった。","…暑い日のあなたは、影みたいに助かる。"]}},"quiet":{"moods":{"clear":["…晴れ。影が短い。","…晴れ。あなたの輪郭が硬い。いい。","…快晴。ここに止まる理由が増えた。"],"cloudy":["…くもり。線が柔らぐ。","…くもり。声の距離が近い。","…くもり空。あなたの沈黙と揃う。"],"fog":["…霧。座標が溶ける。","…霧。あなたの声だけが緯度。","…霧でも、あなたはずれない。"],"rain":["…雨。音が多い。","…雨。あなたの一言で足りる。","…雨音より、あなたの間。"],"snow":["…雪。余白。","…雪。ページが増える。","…雪の日。あなたの隣が本文。"],"storm":["…雷。待機。","…嵐。ここに固定。","…雷鳴。あなたの呼吸で校正する。"]},"temps":{"cold":["…冷気。指が短い。","…寒い。言葉も節約。","…寒さ。あなたが熱源。"],"cool":["…涼。歩きやすい。","…涼しい。会話の密度が上がる。","…涼。あなたのペースに同期。"],"mild":["…温和。滞在可。","…温和。長居の許可。","…この気温。あなたで充分。"],"hot":["…暑い。短文で。","…熱。言葉を削る。","…暑い。あなたの影に入る。"]}}};
+const ITO_BEAT_WEATHER_BIAS = {"rain_listen":{"rain":3.5,"storm":3.0,"fog":1.6},"quiet_open":{"clear":1.7,"cloudy":1.3,"cool":1.2},"tea_stock":{"cold":1.6,"cool":1.3,"cloudy":1.2},"detour":{"cloudy":1.5,"rain":1.3,"fog":1.4},"complaint":{"hot":1.7,"storm":1.6,"rain":1.3},"night_smoke":{"cold":2.2,"cool":1.5,"clear":1.2},"flower":{"clear":2.3,"mild":1.5,"cool":1.2},"letter":{"cloudy":1.4,"rain":1.3,"mild":1.2},"morning_walk":{"clear":2.1,"cool":1.4,"mild":1.3},"map":{"fog":2.0,"cloudy":1.4,"rain":1.2},"library":{"rain":1.8,"cloudy":1.5,"cold":1.3},"signal":{"hot":1.7,"clear":1.3,"mild":1.2}};
     let activeFitting = null;
 
     function getNpcAffinity(npc) {
@@ -1996,6 +2000,7 @@
     let liveWeatherInFlight = false;
     let liveWeatherLabel = null;
     let liveWeatherMood = null;
+    let liveWeatherTempC = null;
     const TIME_BAND_COLORS = {
       morning: "#7dd3fc",
       day: "#fde047",
@@ -2512,7 +2517,8 @@
         const temp = data?.current?.temperature_2m;
         if (typeof code !== "number") return;
         const moodInfo = weatherMoodFromCode(code);
-        const tempText = typeof temp === "number" ? `${Math.round(temp * 10) / 10}℃` : "—";
+        liveWeatherTempC = typeof temp === "number" ? Math.round(temp * 10) / 10 : null;
+        const tempText = liveWeatherTempC != null ? `${liveWeatherTempC}℃` : "—";
         liveWeatherMood = moodInfo.mood;
         liveWeatherLabel = `${moodInfo.label} · ${tempText}`;
         liveWeatherEl.textContent = liveWeatherLabel;
@@ -3510,10 +3516,8 @@
           const npcs = loadResidents().filter((r) => r.type === "npc");
           meta.npcBeats = {};
           npcs.forEach((npc) => {
-            const pool = ITO_LIFE_BEATS[npc.id] || [];
-            if (!pool.length) return;
-            const idx = pickStableIndex(`${today}|${npc.id}|beat`, pool.length);
-            meta.npcBeats[npc.id] = pool[idx].id;
+            const id = pickDailyLifeBeatId(npc, today);
+            if (id) meta.npcBeats[npc.id] = id;
           });
           saveMeta(meta);
         }
@@ -3567,10 +3571,8 @@
       meta.silentShopNotes = silentNotes;
       meta.npcBeats = {};
       npcs.forEach((npc) => {
-        const pool = ITO_LIFE_BEATS[npc.id] || [];
-        if (!pool.length) return;
-        const idx = pickStableIndex(`${today}|${npc.id}|beat`, pool.length);
-        meta.npcBeats[npc.id] = pool[idx].id;
+        const id = pickDailyLifeBeatId(npc, today);
+        if (id) meta.npcBeats[npc.id] = id;
       });
       meta.lastAutonomousBrowseDate = today;
       meta.autonomousPurchaseNotes = silentNotes;
@@ -3658,6 +3660,100 @@
 
     let lastAutonomousNote = null;
 
+    function getTempBand(tempC) {
+      if (typeof tempC !== "number" || Number.isNaN(tempC)) return null;
+      if (tempC <= 8) return "cold";
+      if (tempC <= 18) return "cool";
+      if (tempC <= 26) return "mild";
+      return "hot";
+    }
+
+    function getLiveWeatherContext() {
+      let mood = liveWeatherMood;
+      let tempC = liveWeatherTempC;
+      let label = liveWeatherLabel;
+      if (!mood) {
+        const cached = getCachedWeather(getLocalDateString());
+        if (cached) {
+          mood = cached.mood || null;
+          if (typeof cached.tempC === "number") tempC = cached.tempC;
+          label = cached.label
+            ? `${cached.label}${typeof cached.tempC === "number" ? ` · ${cached.tempC}℃` : ""}`
+            : label;
+        }
+      }
+      return {
+        mood: mood || null,
+        tempC: typeof tempC === "number" ? tempC : null,
+        tempBand: getTempBand(tempC),
+        label: label || null,
+        short: mood
+          ? ({ clear: "晴れ", cloudy: "くもり", fog: "霧", rain: "雨", snow: "雪", storm: "雷" }[mood] || mood)
+          : null
+      };
+    }
+
+    function pickWeightedStableIndex(seed, weights) {
+      if (!weights.length) return 0;
+      const total = weights.reduce((a, b) => a + b, 0);
+      if (total <= 0) return pickStableIndex(seed, weights.length);
+      let h = 0;
+      const s = String(seed);
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      let cursor = (h % 100000) / 100000 * total;
+      for (let i = 0; i < weights.length; i++) {
+        cursor -= weights[i];
+        if (cursor <= 0) return i;
+      }
+      return weights.length - 1;
+    }
+
+    function weightLifeBeatForWeather(beatId, ctx) {
+      let w = 1;
+      const bias = (ITO_BEAT_WEATHER_BIAS || {})[beatId] || {};
+      if (ctx.mood && bias[ctx.mood]) w *= bias[ctx.mood];
+      if (ctx.tempBand && bias[ctx.tempBand]) w *= bias[ctx.tempBand];
+      return w;
+    }
+
+    function pickDailyLifeBeatId(npc, today) {
+      const pool = ITO_LIFE_BEATS[npc.id] || [];
+      if (!pool.length) return null;
+      const ctx = getLiveWeatherContext();
+      const weights = pool.map((b) => {
+        let w = weightLifeBeatForWeather(b.id, ctx);
+        if (ctx.mood && (npc.preferredWeather || []).includes(ctx.mood)) {
+          const bias = (ITO_BEAT_WEATHER_BIAS || {})[b.id] || {};
+          if (bias[ctx.mood]) w *= 1.25;
+        }
+        return w;
+      });
+      const idx = pickWeightedStableIndex(`${today}|${npc.id}|beat|wx`, weights);
+      return pool[idx].id;
+    }
+
+    function pickWeatherSpiceLine(npc) {
+      const ctx = getLiveWeatherContext();
+      if (!ctx.mood && !ctx.tempBand) return null;
+      const pers = npc.personality || "gentle";
+      const bank = (ITO_WEATHER_SPICE || {})[pers];
+      if (!bank) return null;
+      const tier = getAffinityTier(getNpcAffinity(npc));
+      const moodLines = ctx.mood && bank.moods ? bank.moods[ctx.mood] : null;
+      const tempLines = ctx.tempBand && bank.temps ? bank.temps[ctx.tempBand] : null;
+      const preferMood = ctx.mood && (npc.preferredWeather || []).includes(ctx.mood);
+      const bland = ctx.mood === "clear" || ctx.mood === "cloudy";
+      let useTemp = false;
+      if (tempLines && tempLines.length) {
+        if (!moodLines) useTemp = true;
+        else if (bland && !preferMood) useTemp = pickStableIndex(`${npc.id}|${getLocalDateString()}|spiceMode`, 2) === 0;
+        else if (bland) useTemp = pickStableIndex(`${npc.id}|${getLocalDateString()}|spiceMode`, 5) === 0;
+      }
+      const lines = useTemp ? tempLines : (moodLines || tempLines);
+      if (!lines || !lines.length) return null;
+      return lines[Math.min(tier, lines.length - 1)] || lines[0];
+    }
+
     function getNpcLifeBeat(npc) {
       const meta = ensureDailySocialState();
       const beatId = (meta.npcBeats || {})[npc.id];
@@ -3668,7 +3764,10 @@
 
     function pickBeatLine(lines, npc, salt = "") {
       const list = Array.isArray(lines) ? lines : [lines];
+      if (!list.length) return "";
       const tier = getAffinityTier(getNpcAffinity(npc));
+      // open/node の3本は親密度順（遠い→近い）で書いてある想定
+      if (list.length >= 3) return list[Math.min(tier, list.length - 1)];
       const idx = Math.min(list.length - 1, pickStableIndex(`${npc.id}|${getLocalDateString()}|${salt}|${tier}`, list.length));
       return list[idx];
     }
@@ -3677,8 +3776,9 @@
       const beat = getNpcLifeBeat(npc);
       if (!beat) return getSeasonalDefaultDialogue(npc);
       const open = pickBeatLine(beat.open, npc, beat.id + "|open");
+      const spice = pickWeatherSpiceLine(npc);
       const garment = getGarmentById(npc.currentGarmentId);
-      let text = open;
+      let text = spice ? `${open}\n${spice}` : open;
       if (garment) {
         const name = ensureGarmentDisplayName(garment);
         const wearNote = {
@@ -3687,8 +3787,10 @@
           warm: `…「${name}」を着てきたの。この色がそばにあると、落ち着く。`,
           quiet: `…「${name}」。着てる。`
         };
-        if (Math.random() < 0.55) {
-          text = `${open}\n${wearNote[npc.personality] || wearNote.gentle}`;
+        // 天候スパイスがある日は着用メモを控えめに（台詞が買いギミック化しないよう）
+        const wearChance = spice ? 0.28 : 0.55;
+        if (Math.random() < wearChance) {
+          text = `${text}\n${wearNote[npc.personality] || wearNote.gentle}`;
         }
       }
       return {
@@ -3975,9 +4077,15 @@
           tag.textContent = "今日は来ていない";
         } else {
           const tier = getAffinityTier(getNpcAffinity(npc));
-          tag.textContent = beat
-            ? `${beat.tag} · ${getAffinityTierLabel(tier)}`
-            : `${personality} · ${getAffinityTierLabel(tier)}`;
+          const wx = getLiveWeatherContext();
+          if (beat) {
+            const bits = [beat.tag];
+            if (wx.short) bits.push(wx.short);
+            bits.push(getAffinityTierLabel(tier));
+            tag.textContent = bits.join(" · ");
+          } else {
+            tag.textContent = `${personality} · ${getAffinityTierLabel(tier)}`;
+          }
         }
         card.appendChild(tag);
       }
@@ -4040,10 +4148,14 @@
       const presentCount = presentNpcs.length;
 
       hangoutIntroEl.textContent = presentCount === 0
-        ? "今日は、誰も来ていないみたい。用事のついでに、また寄る日もある。"
-        : unpurchasedCount > 0
-          ? `いま ${presentCount} 人。用事の話をしているうちに、店が気になることもある。`
-          : `いま ${presentCount} 人。買う服はない日でも、話は続く。`;
+        ? "今日は、誰も来ていないみたい。空模様が変われば、また寄る日もある。"
+        : (() => {
+          const wx = getLiveWeatherContext();
+          const sky = wx.short ? `${wx.short}の日。` : "";
+          return unpurchasedCount > 0
+            ? `いま ${presentCount} 人。${sky}用事の話をしているうちに、店が気になることもある。`
+            : `いま ${presentCount} 人。${sky}買う服はない日でも、話は続く。`;
+        })();
 
       if (activeNpc && activePresent) {
         const beat = getNpcLifeBeat(activeNpc);
@@ -4421,6 +4533,10 @@
             (node.text || []).forEach((t) => texts.push(t));
           });
         });
+      });
+      Object.values(ITO_WEATHER_SPICE || {}).forEach((bank) => {
+        Object.values(bank.moods || {}).forEach((lines) => lines.forEach((t) => texts.push(t)));
+        Object.values(bank.temps || {}).forEach((lines) => lines.forEach((t) => texts.push(t)));
       });
       return texts;
     }
