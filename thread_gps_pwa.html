@@ -1456,8 +1456,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 52;
-    const OFFLINE_CACHE = "ito-shell-v52";
+    const APP_SHELL_VERSION = 53;
+    const OFFLINE_CACHE = "ito-shell-v53";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -3943,10 +3943,14 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       } else if (tier >= 1 && npc.personality === "sarcastic") {
         text += " …まあ、お前のおかげだ。";
       }
+      // 服屋画面で購入した場合、「服屋で確認する」は冗長
+      const choices = currentView === "shop"
+        ? ["似合いそう", "また話そう"]
+        : ["似合いそう", "服屋で確認する"];
       return {
         id: "purchase",
         lines: [{ speaker: npc.name, text }],
-        choices: ["似合いそう", "服屋で確認する"]
+        choices
       };
     }
 
@@ -4373,6 +4377,12 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
             const config = profile.replies[key] || profile.replies[label];
             if (!config) return;
             if (config.action === "open_shop") {
+              if (currentView === "shop") {
+                hideDialogueBox();
+                messageEl.textContent = "服屋 — 購入済のバッジを確認できる";
+                dialogueChoicesEl.innerHTML = "";
+                return;
+              }
               switchView("shop");
               messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
               dialogueChoicesEl.innerHTML = "";
@@ -4391,7 +4401,12 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
             showDialogueLine({ speaker: speakerNpc.name, text: config.reply });
             bumpNpcAffinity(speakerNpc.id, 2);
             if (config.followUps && config.followUps.length > 0) {
-              showDialogueChoices(config.followUps.map((f) => choiceLabelForNow(f)), "followUp", speakerNpc);
+              let ups = config.followUps.slice();
+              if (currentView === "shop") {
+                ups = ups.filter((f) => f !== "服屋で確認する");
+                if (!ups.length) ups = ["また話そう"];
+              }
+              showDialogueChoices(ups.map((f) => choiceLabelForNow(f)), "followUp", speakerNpc);
             } else {
               dialogueChoicesEl.innerHTML = "";
             }
@@ -4403,8 +4418,13 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
             showDialogueLine({ speaker: speakerNpc.name, text: closing });
           }
           if (key === "服屋で確認する" || label === "服屋で確認する") {
-            switchView("shop");
-            messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
+            if (currentView === "shop") {
+              hideDialogueBox();
+              messageEl.textContent = "服屋 — 購入済のバッジを確認できる";
+            } else {
+              switchView("shop");
+              messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
+            }
           }
           dialogueChoicesEl.innerHTML = "";
         });
