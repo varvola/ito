@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v41</title>
+  <title>糸 — Day 12 · v42</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -729,13 +729,22 @@
     }
 
     #dialogueBox {
-      background: rgba(0,0,0,0.45);
-      border: 1px solid rgba(255,255,255,0.12);
+      position: fixed;
+      left: 12px;
+      right: 12px;
+      bottom: 78px;
+      z-index: 28;
+      background: rgba(12, 16, 24, 0.94);
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 14px;
       padding: 14px;
       min-height: 120px;
-      margin-bottom: 12px;
+      max-height: 42vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.35);
     }
+
+    #dialogueBox[hidden] { display: none !important; }
 
     #dialogueSpeaker {
       font-size: 12px;
@@ -788,7 +797,7 @@
       color: #1a1520 !important;
     }
 
-    #hangoutBrowseButton:disabled {
+    #hangoutInviteShopButton:disabled {
       opacity: 0.45;
       cursor: default;
     }
@@ -1130,9 +1139,70 @@
     }
 
     .garmentStatusSold {
-      background: rgba(255, 255, 255, 0.08);
-      color: rgba(255, 255, 255, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(74, 222, 128, 0.16);
+      color: #86efac;
+      border: 1px solid rgba(74, 222, 128, 0.35);
+    }
+
+    .shopVisitorHint {
+      margin: 0 0 10px;
+      font-size: 13px;
+      opacity: 0.75;
+      line-height: 1.45;
+    }
+
+    #shopVisitorList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .shopVisitorCard {
+      text-align: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(253, 224, 71, 0.35);
+      border-radius: 14px;
+      padding: 10px 12px;
+      min-width: 120px;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .shopVisitorCard strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .shopVisitorCard span {
+      display: block;
+      font-size: 11px;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+
+    #shopPurchaseFlash {
+      margin: 0 0 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(74, 222, 128, 0.18);
+      border: 1px solid rgba(74, 222, 128, 0.4);
+      color: #bbf7d0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    #shopPurchaseFlash[hidden] { display: none !important; }
+
+    .npcCardAbsent {
+      opacity: 0.42;
+      border-style: dashed;
+    }
+
+    .npcCardAbsent .npcWearing {
+      opacity: 0.8;
     }
   </style>
 </head>
@@ -1193,26 +1263,33 @@
 
   <div id="viewShop" hidden>
     <h2>服屋</h2>
-    <p id="shopIntro">0:00 に昨日の糸が1着になる。ここに並ぶ服は、あなたの一日そのもの。</p>
+    <p id="shopIntro">ここに並ぶ服は、あなたの一日。購入はここで行う。</p>
+    <div id="shopVisitorSection" class="shopSection" hidden>
+      <h3>今日の来客</h3>
+      <p id="shopVisitorHint" class="shopVisitorHint"></p>
+      <div id="shopVisitorList"></div>
+    </div>
+    <div id="shopPurchaseFlash" hidden></div>
     <div id="garmentList"></div>
   </div>
 
   <div id="viewHangout" hidden>
     <h2>たむろ場</h2>
-    <p id="hangoutIntro">街の人が、あなたの服を選んで着る場所。</p>
+    <p id="hangoutIntro">街の人が、ときどき立ち寄る場所。話すと、服屋に足が向きやすくなる。</p>
     <div id="hangoutScene">
       <div id="hangoutNpcList"></div>
     </div>
-    <div id="dialogueBox">
-      <div id="dialogueSpeaker">—</div>
-      <div id="dialogueText">話しかけてみて。</div>
-      <div id="dialogueChoices"></div>
-    </div>
     <div id="hangoutActions">
       <button id="hangoutTalkButton" type="button">話しかける</button>
-      <button id="hangoutBrowseButton" type="button">服屋を見てもらう</button>
+      <button id="hangoutInviteShopButton" type="button">服屋の話をする</button>
       <button id="hangoutResetPurchasesButton" type="button" class="secondary">購入をやり直す</button>
     </div>
+  </div>
+
+  <div id="dialogueBox" hidden>
+    <div id="dialogueSpeaker">—</div>
+    <div id="dialogueText">話しかけてみて。</div>
+    <div id="dialogueChoices"></div>
   </div>
 
   <div id="offlinePrepBanner">
@@ -1337,8 +1414,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 41;
-    const OFFLINE_CACHE = "ito-shell-v41";
+    const APP_SHELL_VERSION = 42;
+    const OFFLINE_CACHE = "ito-shell-v42";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1398,12 +1475,17 @@
     const viewHangout = document.getElementById("viewHangout");
     const hangoutIntroEl = document.getElementById("hangoutIntro");
     const hangoutNpcListEl = document.getElementById("hangoutNpcList");
+    const dialogueBoxEl = document.getElementById("dialogueBox");
     const dialogueSpeakerEl = document.getElementById("dialogueSpeaker");
     const dialogueTextEl = document.getElementById("dialogueText");
     const dialogueChoicesEl = document.getElementById("dialogueChoices");
     const hangoutTalkButtonEl = document.getElementById("hangoutTalkButton");
-    const hangoutBrowseButtonEl = document.getElementById("hangoutBrowseButton");
+    const hangoutInviteShopButtonEl = document.getElementById("hangoutInviteShopButton");
     const hangoutResetPurchasesButtonEl = document.getElementById("hangoutResetPurchasesButton");
+    const shopVisitorSectionEl = document.getElementById("shopVisitorSection");
+    const shopVisitorListEl = document.getElementById("shopVisitorList");
+    const shopVisitorHintEl = document.getElementById("shopVisitorHint");
+    const shopPurchaseFlashEl = document.getElementById("shopPurchaseFlash");
     const garmentListEl = document.getElementById("garmentList");
     const shopIntroEl = document.getElementById("shopIntro");
     const installBannerEl = document.getElementById("installBanner");
@@ -1855,13 +1937,21 @@
       renderShop();
       if (result?.bought) {
         const name = ensureGarmentDisplayName(result.garment);
-        messageEl.textContent = `${fresh.name}が「${name}」を選んだ — あなたの反応のあと`;
+        const msg = `購入が成立 — ${fresh.name}が「${name}」を買った`;
+        flashShopPurchase(msg);
+        messageEl.textContent = msg;
         startHangoutDialogue({
           afterPurchase: true,
           npcId: fresh.id,
           purchaseReason: result.reason,
           skipAffinity: true
         });
+        // 購入後は店の一覧を更新（たむろ会話は店内でも可）
+        if (currentView === "shop") renderShop();
+        else {
+          renderHangout();
+          renderShop();
+        }
         return;
       }
       const profile = getNpcProfile(fresh);
@@ -3163,7 +3253,7 @@
       renderShop();
       renderHangout();
       switchView("hangout");
-      showDialogueLine({ speaker: "—", text: "NPCをタップ → 話しかける（服の話で買うことも）。ひとりで選ぶ日もあります。" });
+      showDialogueLine({ speaker: "—", text: "たむろで話す → 服屋に来客。購入と試着は服屋で。" });
       dialogueChoicesEl.innerHTML = "";
       messageEl.textContent = "会話テスト — 滞在の糸が多い服を用意しました";
     }
@@ -3383,16 +3473,133 @@
       return loadGarments().filter((g) => !purchasedIds.has(g.id));
     }
 
-    function getGarmentShopStatus(garment) {
+    function getNpcOwnedGarmentIds(npcId) {
+      return loadPurchases()
+        .filter((p) => p.buyerId === npcId)
+        .map((p) => p.garmentId);
+    }
+
+    function getGarmentBuyerName(garment) {
       const purchase = loadPurchases().find((p) => p.garmentId === garment.id);
-      if (!purchase) {
-        return { label: "未購入", className: "garmentStatusUnsold" };
+      if (!purchase) return null;
+      const buyer = loadResidents().find((r) => r.id === purchase.buyerId);
+      return buyer ? buyer.name : "誰か";
+    }
+
+    function getGarmentShopStatus(garment) {
+      const buyerName = getGarmentBuyerName(garment);
+      if (!buyerName) {
+        return { label: "販売中", className: "garmentStatusUnsold" };
       }
+      const meta = loadMeta();
       const wearer = loadResidents().find((r) => r.currentGarmentId === garment.id);
-      if (wearer) {
-        return { label: `${wearer.name}が着用中`, className: "garmentStatusWorn" };
+      if (wearer && (meta.hangoutPresence || {})[wearer.id]) {
+        return { label: `${buyerName}が購入 · きょう着用中`, className: "garmentStatusWorn" };
       }
-      return { label: "購入済", className: "garmentStatusSold" };
+      return { label: `${buyerName}が購入`, className: "garmentStatusSold" };
+    }
+
+    function ensureDailySocialState(force = false) {
+      const today = getLocalDateString();
+      const meta = loadMeta();
+      if (!force && meta.socialDay === today && meta.hangoutPresence) {
+        return meta;
+      }
+
+      const npcs = loadResidents().filter((r) => r.type === "npc");
+      const presence = {};
+      const wearing = {};
+      const visitors = [];
+      const silentNotes = [];
+
+      npcs.forEach((npc) => {
+        const aff = getNpcAffinity(npc);
+        const interest = Number(npc.shopInterest) || 0;
+        const presentChance = Math.min(0.92, 0.4 + aff / 180);
+        presence[npc.id] = Math.random() < presentChance;
+
+        const owned = getNpcOwnedGarmentIds(npc.id).filter((id) => getGarmentById(id));
+        if (owned.length > 0 && presence[npc.id] && Math.random() < Math.min(0.85, 0.4 + aff / 200)) {
+          wearing[npc.id] = owned[owned.length - 1];
+        } else {
+          wearing[npc.id] = null;
+        }
+
+        const stock = getUnpurchasedGarments().length;
+        if (stock > 0) {
+          const visitChance = Math.min(0.9, 0.12 + interest / 100 + aff / 280);
+          if (Math.random() < visitChance) visitors.push(npc.id);
+        }
+      });
+
+      // 来客がひとりで買う日（プレイヤー不在でも店で成立。親密度は上がらない）
+      const silentBuys = [];
+      shuffleInPlace(visitors.slice()).forEach((npcId) => {
+        if (getUnpurchasedGarments().length === 0) return;
+        if (Math.random() > 0.35) return;
+        const result = tryNpcPurchase(npcId, { mode: "autonomous", grantAffinity: false });
+        if (result?.bought) {
+          silentBuys.push(result);
+          silentNotes.push(
+            `${result.npc.name}がひとりで「${ensureGarmentDisplayName(result.garment)}」を買っていった。`
+          );
+        }
+      });
+
+      meta.socialDay = today;
+      meta.hangoutPresence = presence;
+      meta.hangoutWearing = wearing;
+      meta.shopVisitors = visitors.filter((id) => {
+        // still visiting if they didn't already buy everything they wanted - keep all visitors for UI
+        return true;
+      });
+      meta.silentShopNotes = silentNotes;
+      meta.lastAutonomousBrowseDate = today;
+      meta.autonomousPurchaseNotes = silentNotes;
+      saveMeta(meta);
+
+      const list = loadResidents();
+      list.forEach((r) => {
+        if (r.type !== "npc") return;
+        r.currentGarmentId = wearing[r.id] || null;
+      });
+      saveResidents(list);
+
+      lastAutonomousNote = silentNotes.length ? silentNotes.join(" ") : null;
+      return meta;
+    }
+
+    function bumpShopInterest(npcId, amount) {
+      const list = loadResidents();
+      const npc = list.find((r) => r.id === npcId);
+      if (!npc) return;
+      npc.shopInterest = Math.min(100, (Number(npc.shopInterest) || 0) + amount);
+      saveResidents(list);
+      const meta = loadMeta();
+      const visitors = new Set(meta.shopVisitors || []);
+      visitors.add(npcId);
+      meta.shopVisitors = [...visitors];
+      saveMeta(meta);
+    }
+
+    function isNpcPresentToday(npcId) {
+      const meta = ensureDailySocialState();
+      return !!(meta.hangoutPresence || {})[npcId];
+    }
+
+    function getShopVisitorsToday() {
+      const meta = ensureDailySocialState();
+      const ids = meta.shopVisitors || [];
+      return loadResidents().filter((r) => r.type === "npc" && ids.includes(r.id));
+    }
+
+    function flashShopPurchase(text) {
+      if (!shopPurchaseFlashEl) return;
+      shopPurchaseFlashEl.hidden = false;
+      shopPurchaseFlashEl.textContent = text;
+      window.setTimeout(() => {
+        if (shopPurchaseFlashEl.textContent === text) shopPurchaseFlashEl.hidden = true;
+      }, 8000);
     }
 
     function getDayOfWeekName(date = new Date()) {
@@ -3434,16 +3641,38 @@
     let lastAutonomousNote = null;
 
     function getShopChatDialogue(npc) {
-      const profile = getNpcProfile(npc);
-      const open = affinityGreeting(
-        npc,
-        "shop",
-        profile.shopChatOpen || "…服屋に、気になる服があった。試着してみる。"
-      );
+      const tier = getAffinityTier(getNpcAffinity(npc));
+      const lines = {
+        0: "…服屋、気になってる。今度、寄ってみようかな。",
+        1: "…あなたの一日の服、店で見てみたい。話してたら行きたくなった。",
+        2: "…服屋に行きたい。あなたがいる店なら、なおさら。"
+      };
+      const text = affinityGreeting(npc, "shop", null) || lines[tier] || lines[0];
+      // shop greeting in ITO_SOCIAL was try-on focused; prefer hangout invite tone
+      const inviteLines = {
+        gentle: lines,
+        sarcastic: {
+          0: "…服屋、覗くかもな。誘う？ 誘ってないけど。",
+          1: "…店に行く気になってきた。…お前のせいだ。",
+          2: "…服屋、行くぞ。お前も来い。命令じゃない。"
+        },
+        warm: {
+          0: "…服屋、行ってみようかな。あなたの一日、見てみたい。",
+          1: "…店に寄ってみたいな。一緒にいる気がして。",
+          2: "…服屋に行きたい。あなたと、近い場所がいい。"
+        },
+        quiet: {
+          0: "…服屋。行ってみる。",
+          1: "…店に、行きたい。話したから。",
+          2: "…服屋へ。あなたがいるなら、尚更。"
+        }
+      };
+      const pers = npc.personality || "gentle";
+      const chosen = (inviteLines[pers] || lines)[tier] || text;
       return {
-        id: "shop_chat",
-        lines: [{ speaker: npc.name, text: open }],
-        choices: ["試着を見てほしい", "一緒に決めよう", "今日は別の話"]
+        id: "shop_invite",
+        lines: [{ speaker: npc.name, text: chosen }],
+        choices: ["服屋に行ってみて", "また今度"]
       };
     }
 
@@ -3451,6 +3680,7 @@
       const garment = garmentOverride || getGarmentById(npc.currentGarmentId);
       const profile = getNpcProfile(npc);
       if (!garment) {
+        // たむろでは買わない。未購入があれば服屋の話へ
         if (getUnpurchasedGarments().length > 0) {
           return getShopChatDialogue(npc);
         }
@@ -3484,8 +3714,14 @@
     }
 
     function showDialogueLine(line) {
+      if (dialogueBoxEl) dialogueBoxEl.hidden = false;
       dialogueSpeakerEl.textContent = line.speaker;
       dialogueTextEl.textContent = line.text;
+      dialogueChoicesEl.innerHTML = "";
+    }
+
+    function hideDialogueBox() {
+      if (dialogueBoxEl) dialogueBoxEl.hidden = true;
       dialogueChoicesEl.innerHTML = "";
     }
 
@@ -3500,20 +3736,37 @@
         btn.textContent = label;
         btn.addEventListener("click", () => {
           if (phase === "opening") {
-            if (label === "試着を見てほしい" || label === "一緒に決めよう") {
-              const mode = label === "一緒に決めよう" ? "chat_warm" : "chat";
-              bumpNpcAffinity(speakerNpc.id, 1);
-              beginFittingSession(speakerNpc, mode);
-              return;
-            }
-            if (label === "今日は別の話") {
-              bumpNpcAffinity(speakerNpc.id, 1);
-              const skip = profile.replies[label];
+            if (label === "服屋に行ってみて") {
+              bumpNpcAffinity(speakerNpc.id, 2);
+              bumpShopInterest(speakerNpc.id, 28);
               showDialogueLine({
                 speaker: speakerNpc.name,
-                text: (skip && skip.reply) || "…うん。また話そう。"
+                text: "…うん。店に行ってみる。"
               });
               dialogueChoicesEl.innerHTML = "";
+              messageEl.textContent = `${speakerNpc.name}が服屋に向かいそう — 服屋タブで来客を確認`;
+              window.setTimeout(() => switchView("shop"), 700);
+              return;
+            }
+            if (label === "また今度" || label === "今日は別の話") {
+              bumpNpcAffinity(speakerNpc.id, 1);
+              showDialogueLine({
+                speaker: speakerNpc.name,
+                text: "…うん。また話そう。"
+              });
+              dialogueChoicesEl.innerHTML = "";
+              return;
+            }
+            if (label === "試着を見てほしい" || label === "一緒に決めよう") {
+              // 旧導線: たむろでは買わず店へ誘導
+              bumpNpcAffinity(speakerNpc.id, 1);
+              bumpShopInterest(speakerNpc.id, 20);
+              showDialogueLine({
+                speaker: speakerNpc.name,
+                text: "…試着は、服屋でする。行ってみる。"
+              });
+              dialogueChoicesEl.innerHTML = "";
+              window.setTimeout(() => switchView("shop"), 700);
               return;
             }
             const config = profile.replies[label];
@@ -3563,32 +3816,45 @@
         ? loadResidents().find((r) => r.id === options.npcId)
         : getActiveNpc();
       if (!npc) return;
+      if (!options.afterPurchase && currentView === "hangout" && !isNpcPresentToday(npc.id)) {
+        messageEl.textContent = `${npc.name}は、今日はたむろ場にいない`;
+        return;
+      }
       activeNpcId = npc.id;
       activeFitting = null;
       const garment = getGarmentById(npc.currentGarmentId);
       activeDialogue = options.afterPurchase && garment
         ? getPostPurchaseDialogue(npc, garment, options.purchaseReason || "mood")
         : getDialogueForNpc(npc);
-      if (!options.afterPurchase && !options.skipAffinity && activeDialogue.id !== "shop_chat") {
+      if (!options.afterPurchase && !options.skipAffinity && activeDialogue.id !== "shop_invite") {
         bumpNpcAffinity(npc.id, 2);
+      }
+      if (!options.afterPurchase && activeDialogue.id === "shop_invite") {
+        bumpShopInterest(npc.id, 8);
       }
       showDialogueLine(activeDialogue.lines[0]);
       showDialogueChoices(activeDialogue.choices, "opening", npc);
     }
 
-    function renderNpcCard(npc) {
-      const garment = getGarmentById(npc.currentGarmentId);
+    function renderNpcCard(npc, options = {}) {
+      const present = options.present !== false;
+      const garment = present ? getGarmentById(npc.currentGarmentId) : null;
       const card = document.createElement("button");
       card.type = "button";
-      card.className = `npcCard${npc.id === activeNpcId ? " active" : ""}`;
-      card.addEventListener("click", () => setActiveNpc(npc.id));
+      card.className = `npcCard${npc.id === activeNpcId ? " active" : ""}${present ? "" : " npcCardAbsent"}`;
+      card.disabled = !present;
+      if (present) {
+        card.addEventListener("click", () => setActiveNpc(npc.id));
+      }
 
       const personality = getNpcPersonalityLabel(npc);
       if (personality) {
         const tag = document.createElement("div");
         tag.className = "npcCardPersonality";
         const tier = getAffinityTier(getNpcAffinity(npc));
-        tag.textContent = `${personality} · ${getAffinityTierLabel(tier)}`;
+        tag.textContent = present
+          ? `${personality} · ${getAffinityTierLabel(tier)}`
+          : "今日は来ていない";
         card.appendChild(tag);
       }
 
@@ -3614,13 +3880,13 @@
 
       const wearingEl = document.createElement("div");
       wearingEl.className = "npcWearing";
-      if (!garment) {
-        wearingEl.textContent = "まだ服を選んでいない";
+      if (!present) {
+        wearingEl.textContent = "—";
+      } else if (!garment) {
+        const owned = getNpcOwnedGarmentIds(npc.id).length;
+        wearingEl.textContent = owned > 0 ? "きょうは私服" : "まだ服を買っていない";
       } else {
-        const purchase = loadPurchases().find((p) => p.garmentId === garment.id);
-        wearingEl.textContent = purchase
-          ? `「${ensureGarmentDisplayName(garment)}」（服屋で選んだ）`
-          : `「${ensureGarmentDisplayName(garment)}」`;
+        wearingEl.textContent = `「${ensureGarmentDisplayName(garment)}」着用`;
       }
       card.appendChild(wearingEl);
 
@@ -3628,76 +3894,59 @@
     }
 
     function renderHangout() {
+      ensureDailySocialState();
       residents = loadResidents();
       purchases = loadPurchases();
+      const meta = loadMeta();
+      const presence = meta.hangoutPresence || {};
       const npcs = residents.filter((r) => r.type === "npc");
-      if (!npcs.find((n) => n.id === activeNpcId)) {
-        activeNpcId = npcs[0]?.id || "npc_master";
+      const presentNpcs = npcs.filter((n) => presence[n.id]);
+      if (!presentNpcs.find((n) => n.id === activeNpcId)) {
+        activeNpcId = presentNpcs[0]?.id || npcs[0]?.id || "npc_master";
       }
 
       hangoutNpcListEl.innerHTML = "";
       npcs.forEach((npc) => {
-        hangoutNpcListEl.appendChild(renderNpcCard(npc));
+        hangoutNpcListEl.appendChild(renderNpcCard(npc, { present: !!presence[npc.id] }));
       });
 
       const activeNpc = getActiveNpc();
-      const allGarments = loadGarments();
-      const unpurchased = getUnpurchasedGarments();
-      const garmentCount = allGarments.length;
-      const unpurchasedCount = unpurchased.length;
-      const anyWearing = npcs.some((n) => n.currentGarmentId);
+      const activePresent = activeNpc && presence[activeNpc.id];
+      const unpurchasedCount = getUnpurchasedGarments().length;
+      const presentCount = presentNpcs.length;
 
-      if (lastAutonomousNote) {
-        hangoutIntroEl.textContent = lastAutonomousNote;
-      } else if (garmentCount === 0) {
-        hangoutIntroEl.textContent = "服屋に服が並ぶと、誰かが選びに来るかもしれない。";
-      } else if (anyWearing) {
-        hangoutIntroEl.textContent = unpurchasedCount > 0
-          ? `あなたの一日が、誰かの姿になっている。服屋に未購入 ${unpurchasedCount} 着。話しかけると、まだ選んでいない人が服の話をするかも。`
-          : "あなたの一日が、誰かの姿になっている。服屋の服は、すべて選ばれた。";
-      } else if (unpurchasedCount > 0) {
-        hangoutIntroEl.textContent = `服屋に未購入 ${unpurchasedCount} 着。話しかけると服の話に、ひとりで寄る日もある。`;
-      } else {
-        hangoutIntroEl.textContent = "服屋の服は、すべて選ばれた。また新しい服が並ぶのを待っている。";
-      }
+      hangoutIntroEl.textContent = presentCount === 0
+        ? "今日は、誰も来ていないみたい。また夕方に寄ってみよう。"
+        : unpurchasedCount > 0
+          ? `いま ${presentCount} 人。話すと服屋に足が向きやすい。販売中の服は ${unpurchasedCount} 着。`
+          : `いま ${presentCount} 人。買う服はもうない日。会話だけでも親しくなれる。`;
 
-      if (activeNpc) {
+      if (activeNpc && activePresent) {
+        hangoutTalkButtonEl.disabled = false;
         hangoutTalkButtonEl.textContent = `${activeNpc.name}に話しかける`;
-      }
-
-      if (garmentCount === 0) {
-        hangoutBrowseButtonEl.disabled = true;
-        hangoutBrowseButtonEl.textContent = "一緒に服屋へ";
-      } else if (unpurchasedCount === 0) {
-        hangoutBrowseButtonEl.disabled = true;
-        hangoutBrowseButtonEl.textContent = "一緒に服屋へ（未購入なし）";
-      } else if (activeNpc) {
-        hangoutBrowseButtonEl.disabled = false;
-        hangoutBrowseButtonEl.textContent = `${activeNpc.name}と一緒に服屋へ（未購入 ${unpurchasedCount} 着）`;
+        hangoutInviteShopButtonEl.disabled = unpurchasedCount === 0;
+        hangoutInviteShopButtonEl.textContent = unpurchasedCount === 0
+          ? "服屋の話（販売中なし）"
+          : `${activeNpc.name}と服屋の話`;
+      } else {
+        hangoutTalkButtonEl.disabled = true;
+        hangoutTalkButtonEl.textContent = "話しかける";
+        hangoutInviteShopButtonEl.disabled = true;
+        hangoutInviteShopButtonEl.textContent = "服屋の話をする";
       }
     }
 
-    function browseGarmentsWithNpc() {
+    function inviteNpcToShopTalk() {
       const npc = getActiveNpc();
-      if (!npc) return;
-      const profile = getNpcProfile(npc);
-      const unpurchased = getUnpurchasedGarments();
-      if (loadGarments().length === 0) {
-        messageEl.textContent = "服屋に服がまだありません";
-        showDialogueLine({ speaker: npc.name, text: profile.emptyShop });
-        dialogueChoicesEl.innerHTML = "";
+      if (!npc || !isNpcPresentToday(npc.id)) {
+        messageEl.textContent = "いま話せる人がいない";
         return;
       }
-      if (unpurchased.length === 0) {
-        messageEl.textContent = "未購入の服はありません";
-        showDialogueLine({ speaker: npc.name, text: profile.noUnsold });
-        dialogueChoicesEl.innerHTML = "";
-        renderHangout();
-        return;
-      }
-
       bumpNpcAffinity(npc.id, 1);
-      beginFittingSession(npc, "browse");
+      activeNpcId = npc.id;
+      activeDialogue = getShopChatDialogue(npc);
+      showDialogueLine(activeDialogue.lines[0]);
+      showDialogueChoices(activeDialogue.choices, "opening", npc);
     }
 
     function syncNpcGarmentState() {
@@ -3730,10 +3979,19 @@
       delete meta.lastNpcShopDate;
       delete meta.lastAutonomousBrowseDate;
       delete meta.autonomousPurchaseNotes;
+      delete meta.socialDay;
+      delete meta.hangoutPresence;
+      delete meta.hangoutWearing;
+      delete meta.shopVisitors;
+      delete meta.silentShopNotes;
       saveMeta(meta);
       purchases = [];
       residents = list;
       lastAutonomousNote = null;
+      list.forEach((r) => {
+        if (r.type === "npc") r.shopInterest = 0;
+      });
+      saveResidents(list);
       renderShop();
       renderHangout();
       messageEl.textContent = "購入履歴をリセットしました";
@@ -3976,6 +4234,10 @@
         });
         if (resident.affinity === undefined) {
           resident.affinity = 0;
+          changed = true;
+        }
+        if (resident.shopInterest === undefined) {
+          resident.shopInterest = 0;
           changed = true;
         }
       });
@@ -4367,10 +4629,52 @@
       }
     }
 
+    function renderShopVisitors() {
+      if (!shopVisitorSectionEl || !shopVisitorListEl) return;
+      ensureDailySocialState();
+      const visitors = getShopVisitorsToday();
+      const unsold = getUnpurchasedGarments().length;
+      shopVisitorListEl.innerHTML = "";
+
+      if (visitors.length === 0 || unsold === 0) {
+        shopVisitorSectionEl.hidden = true;
+        return;
+      }
+
+      shopVisitorSectionEl.hidden = false;
+      const notes = (loadMeta().silentShopNotes || []).join(" ");
+      shopVisitorHintEl.textContent = notes
+        ? `${notes} まだ店にいる人には、試着を手伝える。`
+        : "たむろで話した人や、気になった人が来ている。タップで試着・購入。";
+
+      visitors.forEach((npc) => {
+        const alreadyOwnsToday = false;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "shopVisitorCard";
+        const owned = getNpcOwnedGarmentIds(npc.id).length;
+        btn.innerHTML = `<strong>${npc.name}</strong><span>${owned ? `購入歴 ${owned} 着` : "まだ未購入"} · 来客中</span>`;
+        const action = document.createElement("div");
+        action.textContent = unsold ? "試着を見る" : "見るだけ";
+        action.style.fontSize = "12px";
+        action.style.opacity = "0.9";
+        btn.appendChild(action);
+        btn.disabled = unsold === 0;
+        btn.addEventListener("click", () => {
+          activeNpcId = npc.id;
+          bumpNpcAffinity(npc.id, 1);
+          beginFittingSession(npc, "chat_warm");
+        });
+        shopVisitorListEl.appendChild(btn);
+      });
+    }
+
     function renderShop() {
+      ensureDailySocialState();
       garments = loadGarments().sort((a, b) => b.date.localeCompare(a.date));
       garmentListEl.innerHTML = "";
 
+      renderShopVisitors();
       renderTodayPendingSection(garmentListEl);
 
       if (garments.length === 0 && segments.length === 0) {
@@ -4379,7 +4683,7 @@
         empty.className = "garmentEmpty";
         empty.innerHTML = "まだ服がありません。<br>糸を集めて「今日を紡ぐ」を試すか、0:00 まで待ってみて。";
         garmentListEl.appendChild(empty);
-        shopIntroEl.textContent = "0:00 に昨日の糸が1着になる。ここに並ぶ服は、あなたの一日そのもの。";
+        shopIntroEl.textContent = "購入はここで行う。たむろ場で話すと、来客が増えやすい。";
         return;
       }
 
@@ -4390,14 +4694,15 @@
       }
 
       const unpurchasedCount = getUnpurchasedGarments().length;
+      const soldCount = garments.length - unpurchasedCount;
       shopIntroEl.textContent = unpurchasedCount > 0
-        ? `${garments.length} 着の服が並んでいます。未購入 ${unpurchasedCount} 着。`
-        : `${garments.length} 着の服が並んでいます。すべて購入済。`;
+        ? `販売中 ${unpurchasedCount} 着 · 購入済 ${soldCount} 着。下のバッジで状態が分かる。`
+        : `すべて購入済（${soldCount} 着）。たむろでは着ている日も、私服の日もある。`;
       renderRestDaySection(garmentListEl);
 
       const section = document.createElement("div");
       section.className = "shopSection";
-      section.innerHTML = `<h3>完成した服</h3>`;
+      section.innerHTML = `<h3>店頭の服</h3>`;
 
       garments.forEach((garment) => {
         const card = document.createElement("div");
@@ -4849,24 +5154,22 @@
       tabThread.classList.toggle("active", view === "thread");
       tabShop.classList.toggle("active", view === "shop");
       tabHangout.classList.toggle("active", view === "hangout");
+      if (view !== "shop" && view !== "hangout") {
+        hideDialogueBox();
+        activeFitting = null;
+      }
       if (view === "shop") {
+        ensureDailySocialState();
         renderShop();
         const meta = loadMeta();
-        messageEl.textContent = meta.personalTestActive
-          ? "服屋 — 昨日の一日が、ここに並ぶ"
-          : "服屋 — あなたの一日が形になった服";
+        const silent = (meta.silentShopNotes || []).join(" ");
+        messageEl.textContent = silent
+          ? `服屋 — ${silent}`
+          : "服屋 — 購入はここで。来客の試着を手伝える";
       } else if (view === "hangout") {
-        const auto = runAutonomousShopVisits();
+        ensureDailySocialState();
         renderHangout();
-        renderShop();
-        if (auto.length > 0) {
-          const names = auto.map((r) => r.npc.name).join("・");
-          messageEl.textContent = `たむろ場 — ${names}が、ひとりで服屋に寄っていた`;
-        } else if (lastAutonomousNote) {
-          messageEl.textContent = "たむろ場 — 誰かがあなたの服を着ている";
-        } else {
-          messageEl.textContent = "たむろ場 — 話しかけると服の話に、ひとりで選ぶ日もある";
-        }
+        messageEl.textContent = "たむろ場 — 人と話し、服屋へ誘う場所";
       } else {
         messageEl.textContent = segments.length === 0
           ? "雨の日は WASD で試せます。晴れたら GPS"
@@ -5473,7 +5776,7 @@
     tabShop.addEventListener("click", () => switchView("shop"));
     tabHangout.addEventListener("click", () => switchView("hangout"));
     hangoutTalkButtonEl.addEventListener("click", startHangoutDialogue);
-    hangoutBrowseButtonEl.addEventListener("click", browseGarmentsWithNpc);
+    hangoutInviteShopButtonEl.addEventListener("click", inviteNpcToShopTalk);
     hangoutResetPurchasesButtonEl.addEventListener("click", resetPurchases);
 
     spinOverlayHangoutButtonEl.addEventListener("click", () => {
