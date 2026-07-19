@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v48</title>
+  <title>糸 — Day 12 · v49</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1431,8 +1431,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 48;
-    const OFFLINE_CACHE = "ito-shell-v48";
+    const APP_SHELL_VERSION = 49;
+    const OFFLINE_CACHE = "ito-shell-v49";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1831,6 +1831,7 @@ const ITO_WEATHER_SPICE = {"gentle":{"moods":{"clear":["…晴れだね。仕入
 const ITO_BEAT_WEATHER_BIAS = {"rain_listen":{"rain":3.5,"storm":3.0,"fog":1.6},"quiet_open":{"clear":1.7,"cloudy":1.3,"cool":1.2},"tea_stock":{"cold":1.6,"cool":1.3,"cloudy":1.2},"detour":{"cloudy":1.5,"rain":1.3,"fog":1.4},"complaint":{"hot":1.7,"storm":1.6,"rain":1.3},"night_smoke":{"cold":2.2,"cool":1.5,"clear":1.2},"flower":{"clear":2.3,"mild":1.5,"cool":1.2},"letter":{"cloudy":1.4,"rain":1.3,"mild":1.2},"morning_walk":{"clear":2.1,"cool":1.4,"mild":1.3},"map":{"fog":2.0,"cloudy":1.4,"rain":1.2},"library":{"rain":1.8,"cloudy":1.5,"cold":1.3},"signal":{"hot":1.7,"clear":1.3,"mild":1.2}};
 const ITO_TIME_SPICE = {"gentle":{"morning":["…朝の仕込み時間だ。茶の香りがまだ薄い。","…朝だね。君がいると、開店の鐘が優しく聞こえる。","…朝から会えるのは、仕入れより嬉しい知らせだ。"],"day":["…昼の空気だ。用事のあいだの余白、ちょうどいい。","…昼どき。君と話すと、時計の針が緩む。","…昼の光のなかの君は、店の色見本みたいだ。"],"evening":["…夕方だ。袋を下ろすのに、いちばんいい時間。","…夕方が好きでね。君がいると、灯りがひとつ増える。","…夕方に会えると、一日の糸がきれいに結べる。"],"night":["…夜だ。急がなくていい時間帯だね。","…夜更けのたむろは、お茶の二杯目みたいだ。","…夜に君がいると、閉店後の静けさがやさしい。"]},"sarcastic":{"morning":["…朝から遠回りか。お前も暇だな。","…朝だ。文句の在庫、まだ満タンだぞ。","…朝のお前は、目覚ましより効く。"],"day":["…昼だ。日差しと愚痴のピークだな。","…昼間のお前、邪魔…じゃなく、必要悪だ。","…昼に会うと、遠回りのコスパが上がる。"],"evening":["…夕方。空の色が、店の値札より正直だ。","…夕暮れだ。お前の返事も、少しオレンジになる。","…夕方のお前は、帰りの理由になる。"],"night":["…夜だ。用もないのにいる。…俺もだ。","…夜風の席、お前の分も空けといた。嘘だ。","…夜に会うと、皮肉が少し甘くなる。困る。"]},"warm":{"morning":["…おはよう。朝の光、あなたに似てる。","…朝から会えて、一日がもう満たされてる。","…朝のあなたは、花より先に目に入る。"],"day":["…昼だね。あなたの声、お昼ごはんみたい。","…昼間に会えると、歩いた疲れがほどける。","…昼のあなたがいると、手紙より残る。"],"evening":["…夕方…空の色、一緒に見たくて寄った。","…夕焼けの隣に、あなたがいると嬉しい。","…夕方のあなたは、帰る前の宝物。"],"night":["…夜だね。静かすぎて、名前を呼びたくなる。","…夜に会えると、胸の灯りが消えない。","…夜のあなたは、星より近い。"]},"quiet":{"morning":["…朝。影が長い。","…朝。あなたの輪郭が、新しい。","…朝。ここに止まる。"],"day":["…昼。信号が多い。","…昼。あなたの声で足りる。","…昼。座標はここ。"],"evening":["…夕。色が落ちる。","…夕。あなたの色が残る。","…夕。帰りを遅らせる。"],"night":["…夜。余白。","…夜。言葉は短くていい。","…夜。あなたの間が本文。"]}};
 const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk":{"morning":3.0,"day":1.3},"tea_stock":{"morning":1.6,"evening":1.5},"flower":{"morning":1.8,"day":1.4},"letter":{"day":1.4,"evening":1.5},"detour":{"day":1.3,"evening":1.5,"night":1.2},"complaint":{"day":1.5,"evening":1.3},"signal":{"day":1.6,"evening":1.3},"map":{"day":1.3,"evening":1.4,"night":1.2},"library":{"day":1.4,"evening":1.5,"night":1.3},"night_smoke":{"night":3.2,"evening":1.8},"rain_listen":{"day":1.2,"evening":1.3,"night":1.4}};
+const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day":"こんにちは","evening":"こんばんは","night":"夜だね"},"朝の光、いいね":{"morning":"朝の光、いいね","day":"いまの光、いいね","evening":"夕方の光、いいね","night":"夜の気配、いいね"},"朝の話、続けよう":{"morning":"朝の話、続けよう","day":"散歩の話、続けよう","evening":"夕方の話、続けよう","night":"夜の話、続けよう"},"歩けてよかったね":{"morning":"歩けてよかったね","day":"歩けてよかったね","evening":"夕方まで歩けたね","night":"夜まで歩けたね"},"夜更かし？":{"morning":"早起き？","day":"昼間から風にあたってる？","evening":"夕方から長いかも？","night":"夜更かし？"},"冷えるね":{"morning":"朝冷えするね","day":"少し肌寒いね","evening":"夕方、冷えるね","night":"冷えるね"},"ここで温まって":{"morning":"朝のうち、温まって","day":"ここで温まって","evening":"夕方のうち温まって","night":"夜のうち温まって"},"もう少しここにいよう":{"morning":"もう少し、朝をいよう","day":"もう少しここにいよう","evening":"もう少し、夕暮れいよう","night":"もう少し、夜をいよう"},"今日も開店？":{"morning":"今日も開店？","day":"店、開いてる？","evening":"夕方まで開店？","night":"もう閉店？"},"静かだね":{"morning":"朝、静かだね","day":"静かだね","evening":"夕方、静かだね","night":"夜、静かだね"},"がんばって":{"morning":"朝からがんばって","day":"がんばって","evening":"夕方までがんばって","night":"無理しないで"},"あとで店に寄るね":{"morning":"朝のうち寄るね","day":"あとで店に寄るね","evening":"夕方に寄るね","night":"夜でも寄るね"},"雨、やむまでいよう":{"morning":"朝の雨、やむまでいよう","day":"雨、やむまでいよう","evening":"夕方の雨、やむまでいよう","night":"夜の雨、やむまでいよう"},"やんだら店も見ていって":{"morning":"やんだら朝のうち見ていって","day":"やんだら店も見ていって","evening":"やんだら夕方見ていって","night":"やんだら夜でも見ていって"},"雨がやんでからで":{"morning":"朝のうち、やんでからで","day":"雨がやんでからで","evening":"夕方、やんでからで","night":"夜、やんでからで"},"青、待ってるよ":{"morning":"朝の青、待ってるよ","day":"青、待ってるよ","evening":"夕方の青、待ってるよ","night":"夜でも、待ってるよ"},"帰りの前に、もう少し":{"morning":"一日の前に、もう少し","day":"帰りの前に、もう少し","evening":"帰る前の夕方、もう少し","night":"帰る前の夜、もう少し"},"まだ赤でいい":{"morning":"まだ朝の赤でいい","day":"まだ赤でいい","evening":"まだ夕方の赤でいい","night":"まだ夜の赤でいい"},"灯り、見に行こう":{"morning":"朝の灯り、見に行こう","day":"灯り、見に行こう","evening":"夕方の灯り、見に行こう","night":"夜の灯り、見に行こう"},"灯り、見に行ってみて":{"morning":"朝の灯り、見に行ってみて","day":"灯り、見に行ってみて","evening":"夕方の灯り、見に行ってみて","night":"夜の灯り、見に行ってみて"},"灯り、見に行って":{"morning":"朝の灯り、見に行って","day":"灯り、見に行って","evening":"夕方の灯り、見に行って","night":"夜の灯り、見に行って"},"このままでいよう":{"morning":"この朝のままでいよう","day":"このままでいよう","evening":"この夕方のままで","night":"この夜のままで"},"もう少し話そう":{"morning":"朝のうち、もう少し","day":"もう少し話そう","evening":"夕方、もう少し","night":"夜、もう少し"},"ゆっくりして":{"morning":"朝のうちゆっくりして","day":"ゆっくりして","evening":"夕方、ゆっくりして","night":"夜、ゆっくりして"},"また寄ってね":{"morning":"また朝にも寄ってね","day":"また寄ってね","evening":"また夕方寄ってね","night":"また夜寄ってね"},"そばにいるよ":{"morning":"朝も、そばにいるよ","day":"そばにいるよ","evening":"夕方も、そばにいるよ","night":"夜も、そばにいるよ"},"会えてよかった":{"morning":"朝から会えてよかった","day":"会えてよかった","evening":"夕方に会えてよかった","night":"夜に会えてよかった"},"寄ってくれてありがとう":{"morning":"朝に寄ってくれてありがとう","day":"寄ってくれてありがとう","evening":"夕方に寄ってくれてありがとう","night":"夜に寄ってくれてありがとう"},"静かにいよう":{"morning":"朝、静かにいよう","day":"静かにいよう","evening":"夕方、静かにいよう","night":"夜、静かにいよう"},"ここで休んで":{"morning":"朝のうち休んで","day":"ここで休んで","evening":"夕方、ここで休んで","night":"夜、ここで休んで"},"もう少し、ここに":{"morning":"朝、もう少しここに","day":"もう少し、ここに","evening":"夕方、もう少しここに","night":"夜、もう少しここに"},"ここで一息ついて":{"morning":"朝の一息ついて","day":"ここで一息ついて","evening":"夕方、一息ついて","night":"夜、一息ついて"},"余白、ここに置こう":{"morning":"朝の余白、ここに","day":"余白、ここに置こう","evening":"夕方の余白、ここに","night":"夜の余白、ここに"},"服屋に行ってみて":{"morning":"朝のうち服屋へ","day":"服屋に行ってみて","evening":"夕方、服屋へ","night":"夜でも服屋へ"},"また今度":{"morning":"また朝に","day":"また今度","evening":"また夕方に","night":"また夜に"},"用事の話に戻ろう":{"morning":"朝の用事の話に戻ろう","day":"用事の話に戻ろう","evening":"夕方の用事の話に戻ろう","night":"夜の用事の話に戻ろう"}};
     let activeFitting = null;
 
     function getNpcAffinity(npc) {
@@ -3831,6 +3832,30 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
       return list[idx];
     }
 
+    function choiceLabelForNow(canonical) {
+      const map = (ITO_CHOICE_TIME_OVERRIDES || {})[canonical];
+      if (!map) return canonical;
+      return map[getTimeBandKey()] || map.day || canonical;
+    }
+
+    function canonicalChoiceLabel(clicked) {
+      if (!clicked) return clicked;
+      const overrides = ITO_CHOICE_TIME_OVERRIDES || {};
+      if (overrides[clicked]) return clicked;
+      for (const [canon, map] of Object.entries(overrides)) {
+        if (canon === clicked) return canon;
+        if (map && Object.values(map).includes(clicked)) return canon;
+      }
+      return clicked;
+    }
+
+    function findLifeBeatChoice(choices, clickedLabel) {
+      const canon = canonicalChoiceLabel(clickedLabel);
+      return (choices || []).find(
+        (c) => c.label === clickedLabel || c.label === canon || choiceLabelForNow(c.label) === clickedLabel
+      );
+    }
+
     function getLifeBeatDialogue(npc) {
       const beat = getNpcLifeBeat(npc);
       if (!beat) return getSeasonalDefaultDialogue(npc);
@@ -3855,7 +3880,7 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
         id: "life_beat",
         beatId: beat.id,
         lines: [{ speaker: npc.name, text }],
-        choices: beat.choices.map((c) => c.label)
+        choices: beat.choices.map((c) => choiceLabelForNow(c.label))
       };
     }
 
@@ -3866,9 +3891,9 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
       let node = null;
       if (fromNode && beat.nodes[fromNode]) {
         node = beat.nodes[fromNode];
-        choice = (node.choices || []).find((c) => c.label === label);
+        choice = findLifeBeatChoice(node.choices, label);
       } else {
-        choice = (beat.choices || []).find((c) => c.label === label);
+        choice = findLifeBeatChoice(beat.choices, label);
       }
       if (!choice) return;
 
@@ -3921,7 +3946,7 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
       choices.forEach((c) => {
         const btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = c.label;
+        btn.textContent = choiceLabelForNow(c.label);
         btn.addEventListener("click", () => resolveLifeBeatChoice(npc, c.label, fromNode));
         dialogueChoicesEl.appendChild(btn);
       });
@@ -3938,10 +3963,11 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
         warm: `…${tag}のあとでね。店のこと、少しだけ話してもいい？`,
         quiet: `…${tag}。店の話も、少し。`
       };
+      const rawChoices = ["服屋に行ってみて", "用事の話に戻ろう", "また今度"];
       return {
         id: "shop_invite",
         lines: [{ speaker: npc.name, text: lines[pers] || lines.gentle }],
-        choices: ["服屋に行ってみて", "用事の話に戻ろう", "また今度"]
+        choices: rawChoices.map((label) => choiceLabelForNow(label))
       };
     }
 
@@ -4003,19 +4029,20 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
         btn.type = "button";
         btn.textContent = label;
         btn.addEventListener("click", () => {
+          const key = canonicalChoiceLabel(label);
           if (phase === "opening") {
             if (activeDialogue && activeDialogue.id === "life_beat") {
-              resolveLifeBeatChoice(speakerNpc, label, null);
+              resolveLifeBeatChoice(speakerNpc, key, null);
               return;
             }
-            if (label === "用事の話に戻ろう") {
+            if (key === "用事の話に戻ろう") {
               const life = getLifeBeatDialogue(speakerNpc);
               activeDialogue = life;
               showDialogueLine(life.lines[0]);
               showDialogueChoices(life.choices, "opening", speakerNpc);
               return;
             }
-            if (label === "服屋に行ってみて") {
+            if (key === "服屋に行ってみて") {
               bumpNpcAffinity(speakerNpc.id, 2);
               bumpShopInterest(speakerNpc.id, 28);
               const beat = getNpcLifeBeat(speakerNpc);
@@ -4028,7 +4055,7 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
               window.setTimeout(() => switchView("shop"), 700);
               return;
             }
-            if (label === "また今度" || label === "今日は別の話") {
+            if (key === "また今度" || key === "今日は別の話") {
               bumpNpcAffinity(speakerNpc.id, 1);
               showDialogueLine({
                 speaker: speakerNpc.name,
@@ -4037,7 +4064,7 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
               dialogueChoicesEl.innerHTML = "";
               return;
             }
-            if (label === "試着を見てほしい" || label === "一緒に決めよう") {
+            if (key === "試着を見てほしい" || key === "一緒に決めよう") {
               bumpNpcAffinity(speakerNpc.id, 1);
               bumpShopInterest(speakerNpc.id, 20);
               showDialogueLine({
@@ -4048,7 +4075,7 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
               window.setTimeout(() => switchView("shop"), 700);
               return;
             }
-            const config = profile.replies[label];
+            const config = profile.replies[key] || profile.replies[label];
             if (!config) return;
             if (config.action === "open_shop") {
               switchView("shop");
@@ -4069,18 +4096,18 @@ const ITO_BEAT_TIME_BIAS = {"quiet_open":{"morning":2.4,"day":1.2},"morning_walk
             showDialogueLine({ speaker: speakerNpc.name, text: config.reply });
             bumpNpcAffinity(speakerNpc.id, 2);
             if (config.followUps && config.followUps.length > 0) {
-              showDialogueChoices(config.followUps, "followUp", speakerNpc);
+              showDialogueChoices(config.followUps.map((f) => choiceLabelForNow(f)), "followUp", speakerNpc);
             } else {
               dialogueChoicesEl.innerHTML = "";
             }
             return;
           }
 
-          const closing = profile.followUps[label];
+          const closing = profile.followUps[key] || profile.followUps[label];
           if (closing) {
             showDialogueLine({ speaker: speakerNpc.name, text: closing });
           }
-          if (label === "服屋で確認する") {
+          if (key === "服屋で確認する" || label === "服屋で確認する") {
             switchView("shop");
             messageEl.textContent = `服屋 — 「${speakerNpc.name}が着用中」バッジを確認`;
           }
