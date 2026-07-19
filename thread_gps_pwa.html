@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v42</title>
+  <title>糸 — Day 12 · v43</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1414,8 +1414,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 42;
-    const OFFLINE_CACHE = "ito-shell-v42";
+    const APP_SHELL_VERSION = 43;
+    const OFFLINE_CACHE = "ito-shell-v43";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1940,18 +1940,18 @@
         const msg = `購入が成立 — ${fresh.name}が「${name}」を買った`;
         flashShopPurchase(msg);
         messageEl.textContent = msg;
+        // 購入した来客はリストから外す
+        const meta = loadMeta();
+        meta.shopVisitors = (meta.shopVisitors || []).filter((id) => id !== fresh.id);
+        saveMeta(meta);
         startHangoutDialogue({
           afterPurchase: true,
           npcId: fresh.id,
           purchaseReason: result.reason,
           skipAffinity: true
         });
-        // 購入後は店の一覧を更新（たむろ会話は店内でも可）
-        if (currentView === "shop") renderShop();
-        else {
-          renderHangout();
-          renderShop();
-        }
+        if (currentView !== "shop") switchView("shop");
+        else renderShop();
         return;
       }
       const profile = getNpcProfile(fresh);
@@ -4696,57 +4696,73 @@
       const unpurchasedCount = getUnpurchasedGarments().length;
       const soldCount = garments.length - unpurchasedCount;
       shopIntroEl.textContent = unpurchasedCount > 0
-        ? `販売中 ${unpurchasedCount} 着 · 購入済 ${soldCount} 着。下のバッジで状態が分かる。`
+        ? `販売中 ${unpurchasedCount} 着 · 購入済 ${soldCount} 着。上の来客から試着できる。`
         : `すべて購入済（${soldCount} 着）。たむろでは着ている日も、私服の日もある。`;
       renderRestDaySection(garmentListEl);
 
-      const section = document.createElement("div");
-      section.className = "shopSection";
-      section.innerHTML = `<h3>店頭の服</h3>`;
+      const unsold = garments.filter((g) => !getGarmentBuyerName(g));
+      const sold = garments.filter((g) => getGarmentBuyerName(g));
 
-      garments.forEach((garment) => {
-        const card = document.createElement("div");
-        card.className = "garmentCard";
-        const isToday = garment.date === getLocalDateString();
+      function appendGarmentSection(title, list, emptyText) {
+        const section = document.createElement("div");
+        section.className = "shopSection";
+        const h = document.createElement("h3");
+        h.textContent = title;
+        section.appendChild(h);
+        if (list.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "shopVisitorHint";
+          empty.textContent = emptyText;
+          section.appendChild(empty);
+          garmentListEl.appendChild(section);
+          return;
+        }
+        list.forEach((garment) => {
+          const card = document.createElement("div");
+          card.className = "garmentCard";
+          const isToday = garment.date === getLocalDateString();
 
-        const previewWrap = document.createElement("div");
-        previewWrap.className = "garmentPreview";
-        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.setAttribute("viewBox", "0 0 104 140");
-        svg.setAttribute("width", "104");
-        svg.setAttribute("height", "140");
-        renderGarmentPreview(svg, garment);
-        previewWrap.appendChild(svg);
+          const previewWrap = document.createElement("div");
+          previewWrap.className = "garmentPreview";
+          const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+          svg.setAttribute("viewBox", "0 0 104 140");
+          svg.setAttribute("width", "104");
+          svg.setAttribute("height", "140");
+          renderGarmentPreview(svg, garment);
+          previewWrap.appendChild(svg);
 
-        const meta = document.createElement("div");
-        meta.className = "garmentMeta";
-        const topColor = colorName(garment.dominantColor);
-        const displayName = ensureGarmentDisplayName(garment);
-        meta.innerHTML = `
-          <strong class="garmentName" title="タップで名前を変更">${displayName}</strong>
-          <span class="garmentNameHint">${formatDateLabel(garment.date)}${isToday ? " · 今日" : ""} · タップで名前変更</span>
-          糸 ${garment.segmentCount} 本 / 移動 ${garment.totalDistanceM} m<br />
-          主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分 · 柄 ${weaveLabel(resolveWeaveType(garment))}${
-            garment.weatherLabel
-              ? `<br />天気 ${garment.weatherLabel}${typeof garment.tempC === "number" ? ` · ${garment.tempC}℃` : ""}`
-              : ""
-          }
-        `;
-        meta.appendChild(renderColorBreakdown(garment));
-        meta.appendChild(renderColorLabels(garment));
-        const status = getGarmentShopStatus(garment);
-        const statusEl = document.createElement("span");
-        statusEl.className = `garmentStatus ${status.className}`;
-        statusEl.textContent = status.label;
-        meta.appendChild(statusEl);
-        meta.querySelector(".garmentName").addEventListener("click", () => renameGarment(garment.date));
+          const meta = document.createElement("div");
+          meta.className = "garmentMeta";
+          const topColor = colorName(garment.dominantColor);
+          const displayName = ensureGarmentDisplayName(garment);
+          meta.innerHTML = `
+            <strong class="garmentName" title="タップで名前を変更">${displayName}</strong>
+            <span class="garmentNameHint">${formatDateLabel(garment.date)}${isToday ? " · 今日" : ""} · タップで名前変更</span>
+            糸 ${garment.segmentCount} 本 / 移動 ${garment.totalDistanceM} m<br />
+            主な色: ${topColor} · 滞在 ${garment.totalStayMin} 分 · 柄 ${weaveLabel(resolveWeaveType(garment))}${
+              garment.weatherLabel
+                ? `<br />天気 ${garment.weatherLabel}${typeof garment.tempC === "number" ? ` · ${garment.tempC}℃` : ""}`
+                : ""
+            }
+          `;
+          meta.appendChild(renderColorBreakdown(garment));
+          meta.appendChild(renderColorLabels(garment));
+          const status = getGarmentShopStatus(garment);
+          const statusEl = document.createElement("span");
+          statusEl.className = `garmentStatus ${status.className}`;
+          statusEl.textContent = status.label;
+          meta.appendChild(statusEl);
+          meta.querySelector(".garmentName").addEventListener("click", () => renameGarment(garment.date));
 
-        card.appendChild(previewWrap);
-        card.appendChild(meta);
-        section.appendChild(card);
-      });
+          card.appendChild(previewWrap);
+          card.appendChild(meta);
+          section.appendChild(card);
+        });
+        garmentListEl.appendChild(section);
+      }
 
-      garmentListEl.appendChild(section);
+      appendGarmentSection("販売中", unsold, "いま店頭に並んでいる未購入の服はない。");
+      appendGarmentSection("購入済", sold, "まだ誰も買っていない。");
     }
 
     function updateAppHeader() {
