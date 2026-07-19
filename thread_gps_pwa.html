@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="糸" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
-  <title>糸 — Day 12 · v40</title>
+  <title>糸 — Day 12 · v41</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon-192.png" type="image/png" />
   <link rel="apple-touch-icon" href="icon-180.png" />
@@ -1337,8 +1337,8 @@
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
     const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 40;
-    const OFFLINE_CACHE = "ito-shell-v40";
+    const APP_SHELL_VERSION = 41;
+    const OFFLINE_CACHE = "ito-shell-v41";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1448,6 +1448,7 @@
         buyThreshold: 0.55,
         passWhim: 0.1,
         autonomousVisitChance: 0.5,
+        affinity: 0,
         currentGarmentId: null
       },
       {
@@ -1461,6 +1462,7 @@
         buyThreshold: 0.6,
         passWhim: 0.14,
         autonomousVisitChance: 0.42,
+        affinity: 0,
         currentGarmentId: null
       },
       {
@@ -1475,6 +1477,7 @@
         buyThreshold: 0.68,
         passWhim: 0.12,
         autonomousVisitChance: 0.55,
+        affinity: 0,
         currentGarmentId: null
       },
       {
@@ -1489,6 +1492,7 @@
         buyThreshold: 0.64,
         passWhim: 0.16,
         autonomousVisitChance: 0.38,
+        affinity: 0,
         currentGarmentId: null
       }
     ];
@@ -1716,6 +1720,161 @@
       /もったいない/,
       /残念/
     ];
+
+    const ITO_SOCIAL = {"impressionBanks":{"gentle":{"0":[{"ask":"…試着してみた。どう見える？","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.24},{"label":"悪くないね","reaction":"soft","buyMod":0.08},{"label":"うーん…","reaction":"cool","buyMod":-0.28}]},{"ask":"…この色、あなたの一日の色だよね。変じゃない？","answers":[{"label":"いい色だよ","reaction":"warm","buyMod":0.22},{"label":"落ち着くな","reaction":"soft","buyMod":0.1},{"label":"少し地味？","reaction":"cool","buyMod":-0.22}]},{"ask":"…柄の感じ、急がない余白みたいで。どう思う？","answers":[{"label":"余白がいい","reaction":"warm","buyMod":0.23},{"label":"好きかも","reaction":"soft","buyMod":0.09},{"label":"わからない","reaction":"cool","buyMod":-0.2}]},{"ask":"…着てみると、静かになる。変な顔してる？","answers":[{"label":"全然変じゃない","reaction":"warm","buyMod":0.25},{"label":"落ち着いてる","reaction":"soft","buyMod":0.1},{"label":"…そうかな","reaction":"cool","buyMod":-0.24}]},{"ask":"…この服、今日の気分に合うかな。","answers":[{"label":"合うと思う","reaction":"warm","buyMod":0.22},{"label":"悪くない","reaction":"soft","buyMod":0.08},{"label":"別のがいいかも","reaction":"cool","buyMod":-0.26}]},{"ask":"…あなたに見てもらえると、決まる気がする。","answers":[{"label":"着てみて","reaction":"warm","buyMod":0.26},{"label":"似合うよ","reaction":"soft","buyMod":0.12},{"label":"無理しないで","reaction":"cool","buyMod":-0.18}]},{"ask":"…袖通したら、一日が近くなった感じ。どう？","answers":[{"label":"近いね","reaction":"warm","buyMod":0.21},{"label":"わかる気がする","reaction":"soft","buyMod":0.1},{"label":"普通かな","reaction":"cool","buyMod":-0.22}]},{"ask":"…正直に言ってくれていいよ。どう見える？","answers":[{"label":"いいと思う","reaction":"warm","buyMod":0.24},{"label":"好き寄り","reaction":"soft","buyMod":0.09},{"label":"微妙…","reaction":"cool","buyMod":-0.3}]}],"1":[{"ask":"…また試着してる。あなたの感想、ちょっと待ってた。","answers":[{"label":"待たせてごめん、似合ってる","reaction":"warm","buyMod":0.26},{"label":"いい感じ","reaction":"soft","buyMod":0.12},{"label":"前回より微妙","reaction":"cool","buyMod":-0.24}]},{"ask":"…この柄、前に話した余白に近いかな。","answers":[{"label":"近いね","reaction":"warm","buyMod":0.24},{"label":"そうかも","reaction":"soft","buyMod":0.1},{"label":"違うかも","reaction":"cool","buyMod":-0.2}]},{"ask":"…着ると、ここにいるみたいで落ち着く。変？","answers":[{"label":"変じゃない、いい","reaction":"warm","buyMod":0.27},{"label":"落ち着くね","reaction":"soft","buyMod":0.11},{"label":"考えすぎ","reaction":"cool","buyMod":-0.18}]},{"ask":"…あなたの一日を着てる感じがする。どう見える？","answers":[{"label":"ちゃんと届いてる","reaction":"warm","buyMod":0.28},{"label":"伝わってる","reaction":"soft","buyMod":0.12},{"label":"大げさ？","reaction":"cool","buyMod":-0.22}]},{"ask":"…今日はこの服で、少し長く話したくなる。似合う？","answers":[{"label":"似合う、話そう","reaction":"warm","buyMod":0.26},{"label":"似合うよ","reaction":"soft","buyMod":0.11},{"label":"服は別として","reaction":"cool","buyMod":-0.2}]},{"ask":"…鏡より、あなたの顔のほうが気になる。どう？","answers":[{"label":"いい顔してる","reaction":"warm","buyMod":0.25},{"label":"自然だよ","reaction":"soft","buyMod":0.12},{"label":"…照れる","reaction":"cool","buyMod":-0.15}]},{"ask":"…この色、好きって言ってくれたら嬉しいな。","answers":[{"label":"好きだよ","reaction":"warm","buyMod":0.28},{"label":"好き寄り","reaction":"soft","buyMod":0.12},{"label":"普通","reaction":"cool","buyMod":-0.25}]},{"ask":"…試着のたびに、少し勇気がいる。評価して？","answers":[{"label":"合格","reaction":"warm","buyMod":0.27},{"label":"及第点","reaction":"soft","buyMod":0.1},{"label":"保留","reaction":"cool","buyMod":-0.22}]}],"2":[{"ask":"…あなたの前だと、着てるだけで安心する。どう見える？","answers":[{"label":"すごくいい","reaction":"warm","buyMod":0.3},{"label":"安心するね","reaction":"soft","buyMod":0.14},{"label":"…過度かも","reaction":"cool","buyMod":-0.2}]},{"ask":"…この服で会えてよかった、って思っちゃう。変かな。","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.3},{"label":"わかる","reaction":"soft","buyMod":0.14},{"label":"服の話だけに","reaction":"cool","buyMod":-0.22}]},{"ask":"…似合うって言われたら、今日いちばん嬉しいかも。","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.32},{"label":"いいよ","reaction":"soft","buyMod":0.14},{"label":"言わなくても","reaction":"cool","buyMod":-0.18}]},{"ask":"…あなたの一日を、ずっと近くに置きたい感じ。着ていい？","answers":[{"label":"着て","reaction":"warm","buyMod":0.3},{"label":"いいんじゃない","reaction":"soft","buyMod":0.13},{"label":"決めなくていい","reaction":"cool","buyMod":-0.2}]},{"ask":"…話してる間だけでも、この服でいたい。どう思う？","answers":[{"label":"いていいよ","reaction":"warm","buyMod":0.29},{"label":"似合うしね","reaction":"soft","buyMod":0.13},{"label":"自由にして","reaction":"cool","buyMod":-0.16}]},{"ask":"…目が合うと、試着が試着じゃなくなる。…どう見える？","answers":[{"label":"いいよ、似合う","reaction":"warm","buyMod":0.31},{"label":"落ち着いてる","reaction":"soft","buyMod":0.14},{"label":"気にしないで","reaction":"cool","buyMod":-0.18}]},{"ask":"…あなたがいると、色がやさしく見える。気のせい？","answers":[{"label":"気のせいじゃない","reaction":"warm","buyMod":0.3},{"label":"やさしいね","reaction":"soft","buyMod":0.14},{"label":"照明かも","reaction":"cool","buyMod":-0.2}]},{"ask":"…買ったら、またここに来る理由が増える。似合う？","answers":[{"label":"似合う、来て","reaction":"warm","buyMod":0.31},{"label":"似合うよ","reaction":"soft","buyMod":0.14},{"label":"理由はいらない","reaction":"cool","buyMod":-0.15}]}]},"sarcastic":{"0":[{"ask":"…着てみた。笑わないでくれよ。どうだ？","answers":[{"label":"笑ってない、似合う","reaction":"warm","buyMod":0.24},{"label":"悪くない","reaction":"soft","buyMod":0.1},{"label":"微妙だな","reaction":"cool","buyMod":-0.28}]},{"ask":"…この色、認めてもいいレベル？","answers":[{"label":"認める","reaction":"warm","buyMod":0.23},{"label":"まあね","reaction":"soft","buyMod":0.09},{"label":"認めない","reaction":"cool","buyMod":-0.25}]},{"ask":"…柄が怠けてる感じ、わかるだろ。どう？","answers":[{"label":"わかる、いい","reaction":"warm","buyMod":0.24},{"label":"わかる","reaction":"soft","buyMod":0.1},{"label":"わからない","reaction":"cool","buyMod":-0.22}]},{"ask":"…正直に言え。クソダサいか？","answers":[{"label":"ダサくない","reaction":"warm","buyMod":0.26},{"label":"普通にいい","reaction":"soft","buyMod":0.11},{"label":"うーん","reaction":"cool","buyMod":-0.3}]},{"ask":"…試着した。評価しろよ。…お願いじゃないぞ。","answers":[{"label":"高評価","reaction":"warm","buyMod":0.25},{"label":"合格","reaction":"soft","buyMod":0.1},{"label":"保留","reaction":"cool","buyMod":-0.24}]},{"ask":"…あなたの一日着てるわけだ。重い？","answers":[{"label":"重くない","reaction":"warm","buyMod":0.22},{"label":"ちょうどいい","reaction":"soft","buyMod":0.1},{"label":"ちょっと重い","reaction":"cool","buyMod":-0.2}]},{"ask":"…鏡よりお前の反応が怖い。どうだ？","answers":[{"label":"いいと思う","reaction":"warm","buyMod":0.24},{"label":"悪くない","reaction":"soft","buyMod":0.1},{"label":"厳しいな","reaction":"cool","buyMod":-0.22}]},{"ask":"…買うか迷ってる。押し売りじゃない。どう見える？","answers":[{"label":"買っていい","reaction":"warm","buyMod":0.25},{"label":"似合うよ","reaction":"soft","buyMod":0.11},{"label":"やめとけ","reaction":"cool","buyMod":-0.28}]}],"1":[{"ask":"…また聞くぞ。似合うか？ …お前にしか聞かない。","answers":[{"label":"似合う","reaction":"warm","buyMod":0.27},{"label":"似合う寄り","reaction":"soft","buyMod":0.12},{"label":"前回ほどじゃない","reaction":"cool","buyMod":-0.24}]},{"ask":"…この柄、前にいいって言っただろ。まだ有効？","answers":[{"label":"有効","reaction":"warm","buyMod":0.26},{"label":"まだいい","reaction":"soft","buyMod":0.11},{"label":"期限切れ","reaction":"cool","buyMod":-0.22}]},{"ask":"…着ると妙に素直になる。笑い事か？","answers":[{"label":"笑ってない","reaction":"warm","buyMod":0.25},{"label":"いい傾向","reaction":"soft","buyMod":0.12},{"label":"気のせい","reaction":"cool","buyMod":-0.18}]},{"ask":"…お前の一日、悪くない素材だ。服はどうだ？","answers":[{"label":"いい素材だ","reaction":"warm","buyMod":0.27},{"label":"悪くない","reaction":"soft","buyMod":0.12},{"label":"普通","reaction":"cool","buyMod":-0.22}]},{"ask":"…ここで聞くのが、いちばん正確だ。どう見える？","answers":[{"label":"正確に似合う","reaction":"warm","buyMod":0.28},{"label":"似合う","reaction":"soft","buyMod":0.12},{"label":"わからない","reaction":"cool","buyMod":-0.2}]},{"ask":"…褒めてもいいぞ。…俺が、だ。似合うか？","answers":[{"label":"似合うよ","reaction":"warm","buyMod":0.27},{"label":"認めていい","reaction":"soft","buyMod":0.12},{"label":"褒めすぎ","reaction":"cool","buyMod":-0.18}]},{"ask":"…試着のたびに聞くの、クセになってないか？","answers":[{"label":"いいクセだよ","reaction":"warm","buyMod":0.26},{"label":"かまわない","reaction":"soft","buyMod":0.12},{"label":"ちょっと多い","reaction":"cool","buyMod":-0.16}]},{"ask":"…買うなら、お前の一言が最後の一押しだ。","answers":[{"label":"押せ、似合う","reaction":"warm","buyMod":0.29},{"label":"似合うよ","reaction":"soft","buyMod":0.13},{"label":"自分で決めな","reaction":"cool","buyMod":-0.2}]}],"2":[{"ask":"…お前に似合うって言われたいだけかもな。どうだ？","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.3},{"label":"言っていいよ","reaction":"soft","buyMod":0.14},{"label":"依存するな","reaction":"cool","buyMod":-0.2}]},{"ask":"…この服でいると、話が長くなりがちだ。文句ある？","answers":[{"label":"文句なし","reaction":"warm","buyMod":0.29},{"label":"長くていい","reaction":"soft","buyMod":0.14},{"label":"短いほうが","reaction":"cool","buyMod":-0.18}]},{"ask":"…冗談抜きで聞く。今日の俺、悪くないか？","answers":[{"label":"悪くない、いい","reaction":"warm","buyMod":0.31},{"label":"いいよ","reaction":"soft","buyMod":0.14},{"label":"普通","reaction":"cool","buyMod":-0.22}]},{"ask":"…ここに来る理由、服だけじゃないんだろ。…似合うか？","answers":[{"label":"似合う、理由ある","reaction":"warm","buyMod":0.3},{"label":"似合うよ","reaction":"soft","buyMod":0.14},{"label":"服の話だけ","reaction":"cool","buyMod":-0.2}]},{"ask":"…お前の前だと、皮肉が減る。気づいてた？ 服はどうだ？","answers":[{"label":"気づいてた、似合う","reaction":"warm","buyMod":0.3},{"label":"似合う","reaction":"soft","buyMod":0.14},{"label":"気のせい","reaction":"cool","buyMod":-0.16}]},{"ask":"…買ったら、また会いに来いよ。命令じゃない。似合う？","answers":[{"label":"似合う、来る","reaction":"warm","buyMod":0.31},{"label":"似合うよ","reaction":"soft","buyMod":0.14},{"label":"自由にして","reaction":"cool","buyMod":-0.15}]},{"ask":"…正直、お前の目が気になる。服の話だぞ。どう見える？","answers":[{"label":"目より服がいい","reaction":"warm","buyMod":0.28},{"label":"いいよ","reaction":"soft","buyMod":0.14},{"label":"どっちも普通","reaction":"cool","buyMod":-0.18}]},{"ask":"…この距離感、嫌いじゃない。服は？","answers":[{"label":"嫌いじゃない、似合う","reaction":"warm","buyMod":0.3},{"label":"似合う","reaction":"soft","buyMod":0.14},{"label":"距離は別","reaction":"cool","buyMod":-0.16}]}]},"warm":{"0":[{"ask":"…試着してみたの。どう見えるかな？","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.25},{"label":"かわいい","reaction":"soft","buyMod":0.12},{"label":"うーん","reaction":"cool","buyMod":-0.26}]},{"ask":"…朝みたいな色だね。変じゃない？","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.24},{"label":"朝だね","reaction":"soft","buyMod":0.1},{"label":"夜向き？","reaction":"cool","buyMod":-0.2}]},{"ask":"…やわらかい柄、好きかな…どう思う？","answers":[{"label":"好きだよ","reaction":"warm","buyMod":0.26},{"label":"好き寄り","reaction":"soft","buyMod":0.11},{"label":"普通","reaction":"cool","buyMod":-0.24}]},{"ask":"…あなたの一日を着てる感じ。重い？","answers":[{"label":"重くない","reaction":"warm","buyMod":0.23},{"label":"あったかい","reaction":"soft","buyMod":0.12},{"label":"少し重い","reaction":"cool","buyMod":-0.2}]},{"ask":"…鏡より、あなたの顔が見たい。どう？","answers":[{"label":"いいよ","reaction":"warm","buyMod":0.25},{"label":"自然だね","reaction":"soft","buyMod":0.11},{"label":"照れる…","reaction":"cool","buyMod":-0.15}]},{"ask":"…この服、今日の空に近いかな。","answers":[{"label":"近いね","reaction":"warm","buyMod":0.22},{"label":"近いかも","reaction":"soft","buyMod":0.1},{"label":"違うかも","reaction":"cool","buyMod":-0.22}]},{"ask":"…正直な感想、聞かせて？","answers":[{"label":"いいと思う","reaction":"warm","buyMod":0.25},{"label":"悪くない","reaction":"soft","buyMod":0.1},{"label":"微妙","reaction":"cool","buyMod":-0.28}]},{"ask":"…着てみてって言われたら嬉しいな。どう見える？","answers":[{"label":"着てみて","reaction":"warm","buyMod":0.27},{"label":"似合うよ","reaction":"soft","buyMod":0.12},{"label":"決めなくていい","reaction":"cool","buyMod":-0.18}]}],"1":[{"ask":"…また聞いちゃう。似合う？ …あなたの声が好きなの。","answers":[{"label":"似合うよ","reaction":"warm","buyMod":0.28},{"label":"似合う","reaction":"soft","buyMod":0.13},{"label":"声の話は別","reaction":"cool","buyMod":-0.18}]},{"ask":"…この柄、前にいいって言ってくれたやつに近い？","answers":[{"label":"近い、いい","reaction":"warm","buyMod":0.27},{"label":"近いかも","reaction":"soft","buyMod":0.12},{"label":"違う","reaction":"cool","buyMod":-0.2}]},{"ask":"…ここにいると、試着が楽しくなる。どう見える？","answers":[{"label":"楽しそうでいい","reaction":"warm","buyMod":0.27},{"label":"いいよ","reaction":"soft","buyMod":0.12},{"label":"気にしないで","reaction":"cool","buyMod":-0.16}]},{"ask":"…あなたの一日、大切に着たいな。変かな。","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.29},{"label":"わかる","reaction":"soft","buyMod":0.13},{"label":"大げさ","reaction":"cool","buyMod":-0.2}]},{"ask":"…目が合うと、ドキドキする。服のせい？","answers":[{"label":"似合うせいだよ","reaction":"warm","buyMod":0.28},{"label":"服がいいね","reaction":"soft","buyMod":0.13},{"label":"気のせい","reaction":"cool","buyMod":-0.18}]},{"ask":"…買ったら、また会える気がする。似合う？","answers":[{"label":"似合う、会おう","reaction":"warm","buyMod":0.29},{"label":"似合うよ","reaction":"soft","buyMod":0.13},{"label":"会うのは別","reaction":"cool","buyMod":-0.16}]},{"ask":"…やさしく見えてる？ …あなたにだけ聞いてる。","answers":[{"label":"やさしいよ","reaction":"warm","buyMod":0.28},{"label":"やさしい","reaction":"soft","buyMod":0.13},{"label":"普通","reaction":"cool","buyMod":-0.22}]},{"ask":"…この色、好きって言ってほしいな。","answers":[{"label":"好きだよ","reaction":"warm","buyMod":0.3},{"label":"好き寄り","reaction":"soft","buyMod":0.13},{"label":"普通の色","reaction":"cool","buyMod":-0.24}]}],"2":[{"ask":"…あなたの前だと、胸がちょっと鳴る。変な服かな。","answers":[{"label":"変じゃない、似合ってる","reaction":"warm","buyMod":0.32},{"label":"いいよ","reaction":"soft","buyMod":0.15},{"label":"服の話だけに","reaction":"cool","buyMod":-0.2}]},{"ask":"…似合うって言われたら、今日ずっと嬉しい。言って？","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.33},{"label":"似合うよ","reaction":"soft","buyMod":0.15},{"label":"言わなくても","reaction":"cool","buyMod":-0.18}]},{"ask":"…この服で、もう少しそばにいたい。どう見える？","answers":[{"label":"いいよ、そばで","reaction":"warm","buyMod":0.32},{"label":"似合うしね","reaction":"soft","buyMod":0.15},{"label":"距離は自由","reaction":"cool","buyMod":-0.18}]},{"ask":"…あなたのこと、考えながら選んだ気がする。気のせい？","answers":[{"label":"気のせいじゃない","reaction":"warm","buyMod":0.31},{"label":"伝わってる","reaction":"soft","buyMod":0.15},{"label":"考えすぎ","reaction":"cool","buyMod":-0.2}]},{"ask":"…恋みたいな気分、服のせい？ …聞かないで、聞いて。","answers":[{"label":"似合うせいだよ","reaction":"warm","buyMod":0.32},{"label":"いい気分だね","reaction":"soft","buyMod":0.15},{"label":"それは言い過ぎ","reaction":"cool","buyMod":-0.22}]},{"ask":"…名前、呼んでほしくなる服。どう思う？","answers":[{"label":"似合う、呼ぶよ","reaction":"warm","buyMod":0.31},{"label":"似合うよ","reaction":"soft","buyMod":0.15},{"label":"名前は別","reaction":"cool","buyMod":-0.16}]},{"ask":"…買ったら、あなた専用の景色になるかも。似合う？","answers":[{"label":"似合う、景色だね","reaction":"warm","buyMod":0.31},{"label":"似合うよ","reaction":"soft","buyMod":0.15},{"label":"大げさ","reaction":"cool","buyMod":-0.2}]},{"ask":"…ここに来るたび、あなたに見てもらいたくなる。どう？","answers":[{"label":"見たい、似合う","reaction":"warm","buyMod":0.32},{"label":"似合うよ","reaction":"soft","buyMod":0.15},{"label":"毎回は","reaction":"cool","buyMod":-0.15}]}]},"quiet":{"0":[{"ask":"…着た。どう？","answers":[{"label":"似合う","reaction":"warm","buyMod":0.24},{"label":"いい","reaction":"soft","buyMod":0.1},{"label":"微妙","reaction":"cool","buyMod":-0.28}]},{"ask":"…色。どう見える？","answers":[{"label":"いい色","reaction":"warm","buyMod":0.23},{"label":"悪くない","reaction":"soft","buyMod":0.1},{"label":"地味","reaction":"cool","buyMod":-0.24}]},{"ask":"…柄。残る？","answers":[{"label":"残る","reaction":"warm","buyMod":0.24},{"label":"残るかも","reaction":"soft","buyMod":0.1},{"label":"残らない","reaction":"cool","buyMod":-0.22}]},{"ask":"…重い？","answers":[{"label":"重くない","reaction":"warm","buyMod":0.22},{"label":"ちょうどいい","reaction":"soft","buyMod":0.11},{"label":"重い","reaction":"cool","buyMod":-0.2}]},{"ask":"…変？","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.25},{"label":"自然","reaction":"soft","buyMod":0.11},{"label":"少し","reaction":"cool","buyMod":-0.26}]},{"ask":"…今日の空に、近い？","answers":[{"label":"近い","reaction":"warm","buyMod":0.22},{"label":"近いかも","reaction":"soft","buyMod":0.1},{"label":"遠い","reaction":"cool","buyMod":-0.22}]},{"ask":"…正直に。","answers":[{"label":"いい","reaction":"warm","buyMod":0.25},{"label":"普通にいい","reaction":"soft","buyMod":0.1},{"label":"微妙","reaction":"cool","buyMod":-0.3}]},{"ask":"…買う？ …どう見える？","answers":[{"label":"買っていい","reaction":"warm","buyMod":0.26},{"label":"似合う","reaction":"soft","buyMod":0.11},{"label":"見送り","reaction":"cool","buyMod":-0.28}]}],"1":[{"ask":"…また聞く。似合う？","answers":[{"label":"似合う","reaction":"warm","buyMod":0.27},{"label":"似合う寄り","reaction":"soft","buyMod":0.12},{"label":"前回ほど","reaction":"cool","buyMod":-0.22}]},{"ask":"…この線、前にいいって言った。まだ？","answers":[{"label":"まだいい","reaction":"warm","buyMod":0.26},{"label":"まだ","reaction":"soft","buyMod":0.12},{"label":"もう違う","reaction":"cool","buyMod":-0.2}]},{"ask":"…静かになる。変？","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.27},{"label":"いい静かさ","reaction":"soft","buyMod":0.13},{"label":"静かすぎ","reaction":"cool","buyMod":-0.18}]},{"ask":"…あなたの一日。近い。どう見える？","answers":[{"label":"近い、いい","reaction":"warm","buyMod":0.28},{"label":"近い","reaction":"soft","buyMod":0.12},{"label":"遠い","reaction":"cool","buyMod":-0.2}]},{"ask":"…言葉、少ない。服は？","answers":[{"label":"服は雄弁、似合う","reaction":"warm","buyMod":0.27},{"label":"似合う","reaction":"soft","buyMod":0.13},{"label":"もっと話して","reaction":"cool","buyMod":-0.15}]},{"ask":"…ここにいると、決まる。どう？","answers":[{"label":"決まっていい","reaction":"warm","buyMod":0.27},{"label":"いいよ","reaction":"soft","buyMod":0.12},{"label":"決まらなくていい","reaction":"cool","buyMod":-0.16}]},{"ask":"…目、見ていい？ …服の話。どう見える？","answers":[{"label":"見ていい、似合う","reaction":"warm","buyMod":0.28},{"label":"似合う","reaction":"soft","buyMod":0.13},{"label":"服だけ見て","reaction":"cool","buyMod":-0.18}]},{"ask":"…買うなら、今。似合う？","answers":[{"label":"似合う、今","reaction":"warm","buyMod":0.29},{"label":"似合う","reaction":"soft","buyMod":0.13},{"label":"急がないで","reaction":"cool","buyMod":-0.16}]}],"2":[{"ask":"…言葉、少し増える。あなたの前だと。服は、どう見える？","answers":[{"label":"増えていい、似合う","reaction":"warm","buyMod":0.3},{"label":"似合う","reaction":"soft","buyMod":0.15},{"label":"無理しなくていい","reaction":"cool","buyMod":-0.16}]},{"ask":"…この服で、もう少し話したい。変？","answers":[{"label":"変じゃない","reaction":"warm","buyMod":0.3},{"label":"話そう","reaction":"soft","buyMod":0.15},{"label":"短くていい","reaction":"cool","buyMod":-0.18}]},{"ask":"…似合うって、あなたに言われたい。言って。","answers":[{"label":"似合ってる","reaction":"warm","buyMod":0.32},{"label":"似合うよ","reaction":"soft","buyMod":0.15},{"label":"自分で決めて","reaction":"cool","buyMod":-0.18}]},{"ask":"…そばにいると、色が残る。気のせい？","answers":[{"label":"気のせいじゃない","reaction":"warm","buyMod":0.3},{"label":"残ってる","reaction":"soft","buyMod":0.15},{"label":"照明","reaction":"cool","buyMod":-0.18}]},{"ask":"…ここに来る理由、あなたも入ってる。服はどう？","answers":[{"label":"似合う、理由ある","reaction":"warm","buyMod":0.31},{"label":"似合う","reaction":"soft","buyMod":0.15},{"label":"服の話だけ","reaction":"cool","buyMod":-0.2}]},{"ask":"…無口でも、伝えたい。この服、似合う？","answers":[{"label":"伝わってる、似合う","reaction":"warm","buyMod":0.31},{"label":"似合う","reaction":"soft","buyMod":0.15},{"label":"もっと話して","reaction":"cool","buyMod":-0.14}]},{"ask":"…名前を、もう一回聞きたい服。どう見える？","answers":[{"label":"似合う、呼ぶよ","reaction":"warm","buyMod":0.3},{"label":"似合う","reaction":"soft","buyMod":0.15},{"label":"名前は別","reaction":"cool","buyMod":-0.15}]},{"ask":"…買ったら、また来る。約束じゃない。似合う？","answers":[{"label":"似合う、来て","reaction":"warm","buyMod":0.31},{"label":"似合う","reaction":"soft","buyMod":0.15},{"label":"自由に","reaction":"cool","buyMod":-0.14}]}]}},"greetings":{"gentle":{"shop":{"0":"…服屋に、少し気になる服があったんだ。試着してみてもいい？","1":"…また服屋に寄った。あなたの感想、聞いてから決めたい。","2":"…あなたの前で試着したい服があった。見てもらえる？"},"default":{"0":null,"1":"…また会えた。今日は、ゆっくりでいいよ。","2":"…会えて嬉しい。急がなくていいから、ここにいよう。"}},"sarcastic":{"shop":{"0":"…服屋で気になるのがあった。試着する。評価しろよ。","1":"…また試着だ。お前の感想が欲しい。…命令じゃない。","2":"…お前に見せたくて試着した。笑ったら許さない。…どうだ？"},"default":{"1":"…また来たのか。…まあ、悪くない。","2":"…待ってたわけじゃない。…いたら、話せってだけだ。"}},"warm":{"shop":{"0":"…気になる服、試着してみたの。どう見えるか教えて？","1":"…試着したの。あなたの声、聞いてから買いたくて。","2":"…あなたに見てもらうために、着てみた。どう見える？"},"default":{"1":"…会えて嬉しい。今日も、ここにいていい？","2":"…会いたかった。…服の話じゃなくても、いいよね。"}},"quiet":{"shop":{"0":"…試着した。どう？","1":"…試着した。あなたの目が、欲しい。","2":"…着た。あなたに見てもらいたくて。どう見える？"},"default":{"1":"…また。ここにいる。","2":"…会えて、よかった。少し、話す。"}}}};
+
+
+    let activeFitting = null;
+
+    function getNpcAffinity(npc) {
+      const n = Number(npc && npc.affinity);
+      if (Number.isNaN(n)) return 0;
+      return Math.max(0, Math.min(100, n));
+    }
+
+    function getAffinityTier(affinity) {
+      if (affinity >= 70) return 2;
+      if (affinity >= 35) return 1;
+      return 0;
+    }
+
+    function getAffinityTierLabel(tier) {
+      if (tier >= 2) return "親しい";
+      if (tier >= 1) return "顔見知り";
+      return "まだ遠い";
+    }
+
+    function bumpNpcAffinity(npcId, amount) {
+      if (!amount || amount <= 0) return null;
+      const list = loadResidents();
+      const npc = list.find((r) => r.id === npcId);
+      if (!npc) return null;
+      const before = getNpcAffinity(npc);
+      npc.affinity = Math.min(100, before + amount);
+      saveResidents(list);
+      return npc.affinity;
+    }
+
+    function pickStableIndex(seed, len) {
+      if (!len) return 0;
+      let h = 0;
+      const s = String(seed);
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return h % len;
+    }
+
+    function getImpressionPool(npc) {
+      const tier = String(getAffinityTier(getNpcAffinity(npc)));
+      const pers = npc.personality || "gentle";
+      const banks = (ITO_SOCIAL.impressionBanks || {})[pers] || {};
+      return banks[tier] || banks["0"] || [];
+    }
+
+    function pickImpressionQuestion(npc, garment) {
+      const pool = getImpressionPool(npc);
+      if (!pool.length) {
+        return {
+          ask: "…試着してみた。どう見える？",
+          answers: [
+            { label: "似合ってる", reaction: "warm", buyMod: 0.22 },
+            { label: "悪くない", reaction: "soft", buyMod: 0.08 },
+            { label: "うーん…", reaction: "cool", buyMod: -0.25 }
+          ]
+        };
+      }
+      const seed = `${npc.id}|${garment?.id || ""}|${getLocalDateString()}|${getAffinityTier(getNpcAffinity(npc))}`;
+      return pool[pickStableIndex(seed, pool.length)];
+    }
+
+    function affinityGreeting(npc, kind, fallback) {
+      const tier = String(getAffinityTier(getNpcAffinity(npc)));
+      const pers = npc.personality || "gentle";
+      const node = (((ITO_SOCIAL.greetings || {})[pers] || {})[kind] || {})[tier];
+      return node || fallback;
+    }
+
+    function scoreCandidatesForNpc(npc, candidates) {
+      return candidates
+        .map((garment) => {
+          const { score, reason } = scoreGarmentForNpc(garment, npc);
+          return { garment, score, reason };
+        })
+        .sort((a, b) => b.score - a.score);
+    }
+
+    function beginFittingSession(npc, mode) {
+      const unpurchased = getUnpurchasedGarments();
+      if (!unpurchased.length) return false;
+      const scored = scoreCandidatesForNpc(npc, unpurchased);
+      const best = scored[0];
+      if (!best) return false;
+      const question = pickImpressionQuestion(npc, best.garment);
+      const name = ensureGarmentDisplayName(best.garment);
+      activeFitting = {
+        npcId: npc.id,
+        garmentId: best.garment.id,
+        mode,
+        reason: best.reason,
+        questionAsk: question.ask
+      };
+      const intro = affinityGreeting(npc, "shop", null);
+      const line = intro
+        ? `${intro}\n（「${name}」を試着中）\n${question.ask}`
+        : `「${name}」を試着してみた。\n${question.ask}`;
+      showDialogueLine({ speaker: npc.name, text: line });
+      showFittingAnswers(question.answers, npc);
+      messageEl.textContent = `${npc.name}が試着している — 印象を伝えてみよう`;
+      return true;
+    }
+
+    function showFittingAnswers(answers, npc) {
+      dialogueChoicesEl.innerHTML = "";
+      (answers || []).forEach((ans) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = ans.label;
+        btn.addEventListener("click", () => resolveFittingReaction(npc, ans));
+        dialogueChoicesEl.appendChild(btn);
+      });
+    }
+
+    function resolveFittingReaction(npc, ans) {
+      if (!activeFitting || activeFitting.npcId !== npc.id) return;
+      const fitting = activeFitting;
+      activeFitting = null;
+      // 反応そのもので少し親密度（cool でも会話したので微増）
+      bumpNpcAffinity(npc.id, ans.reaction === "cool" ? 1 : 2);
+      const result = tryNpcPurchase(npc.id, {
+        mode: fitting.mode,
+        garmentId: fitting.garmentId,
+        reactionMod: ans.buyMod || 0,
+        grantAffinity: true
+      });
+      const fresh = loadResidents().find((r) => r.id === npc.id) || npc;
+      renderHangout();
+      renderShop();
+      if (result?.bought) {
+        const name = ensureGarmentDisplayName(result.garment);
+        messageEl.textContent = `${fresh.name}が「${name}」を選んだ — あなたの反応のあと`;
+        startHangoutDialogue({
+          afterPurchase: true,
+          npcId: fresh.id,
+          purchaseReason: result.reason,
+          skipAffinity: true
+        });
+        return;
+      }
+      const profile = getNpcProfile(fresh);
+      messageEl.textContent = `${fresh.name}は、今日は選ばなかった`;
+      const passHint = ans.reaction === "cool" ? "whim" : (result?.passHint || "pass");
+      showDialogueLine({
+        speaker: fresh.name,
+        text: profile.browsePass ? profile.browsePass(passHint) : profile.noUnsold
+      });
+      dialogueChoicesEl.innerHTML = "";
+    }
+
+
 
     let currentView = "thread";
     let garments = [];
@@ -3244,9 +3403,11 @@
       const profile = getNpcProfile(npc);
       const dow = getDayOfWeekName();
       const h = new Date().getHours();
+      const fallback = profile.default(dow, h);
+      const text = affinityGreeting(npc, "default", fallback) || fallback;
       return {
         id: "default",
-        lines: [{ speaker: npc.name, text: profile.default(dow, h) }],
+        lines: [{ speaker: npc.name, text }],
         choices: npc.personality === "sarcastic" ? ["うん", "そうかも"] : ["うん"]
       };
     }
@@ -3254,9 +3415,18 @@
     function getPostPurchaseDialogue(npc, garment, reason = "mood") {
       const name = ensureGarmentDisplayName(garment);
       const profile = getNpcProfile(npc);
+      const tier = getAffinityTier(getNpcAffinity(npc));
+      let text = profile.postPurchase(name, reason);
+      if (tier >= 2 && npc.personality === "warm") {
+        text += " …あなたがいてくれて、よかった。";
+      } else if (tier >= 2 && npc.personality === "quiet") {
+        text += " …また、話そう。";
+      } else if (tier >= 1 && npc.personality === "sarcastic") {
+        text += " …まあ、お前のおかげだ。";
+      }
       return {
         id: "purchase",
-        lines: [{ speaker: npc.name, text: profile.postPurchase(name, reason) }],
+        lines: [{ speaker: npc.name, text }],
         choices: ["似合いそう", "服屋で確認する"]
       };
     }
@@ -3265,10 +3435,15 @@
 
     function getShopChatDialogue(npc) {
       const profile = getNpcProfile(npc);
+      const open = affinityGreeting(
+        npc,
+        "shop",
+        profile.shopChatOpen || "…服屋に、気になる服があった。試着してみる。"
+      );
       return {
         id: "shop_chat",
-        lines: [{ speaker: npc.name, text: profile.shopChatOpen || "…服屋に、気になる服があった。" }],
-        choices: profile.shopChatChoices || ["気になるって、どんな？", "着てみてほしいな", "今日は別の話"]
+        lines: [{ speaker: npc.name, text: open }],
+        choices: ["試着を見てほしい", "一緒に決めよう", "今日は別の話"]
       };
     }
 
@@ -3305,28 +3480,7 @@
     }
 
     function applyChatPurchase(npc, mode) {
-      const profile = getNpcProfile(npc);
-      const result = tryNpcPurchase(npc.id, { mode });
-      renderHangout();
-      renderShop();
-      if (result?.bought) {
-        const name = ensureGarmentDisplayName(result.garment);
-        messageEl.textContent = `${npc.name}が「${name}」を選んだ — 会話のあと、服屋へ`;
-        startHangoutDialogue({
-          afterPurchase: true,
-          npcId: npc.id,
-          purchaseReason: result.reason
-        });
-        return;
-      }
-      messageEl.textContent = `${npc.name}は、今日は選ばなかった`;
-      showDialogueLine({
-        speaker: npc.name,
-        text: profile.browsePass
-          ? profile.browsePass(result?.passHint || "pass")
-          : profile.noUnsold
-      });
-      dialogueChoicesEl.innerHTML = "";
+      beginFittingSession(npc, mode || "chat");
     }
 
     function showDialogueLine(line) {
@@ -3346,6 +3500,22 @@
         btn.textContent = label;
         btn.addEventListener("click", () => {
           if (phase === "opening") {
+            if (label === "試着を見てほしい" || label === "一緒に決めよう") {
+              const mode = label === "一緒に決めよう" ? "chat_warm" : "chat";
+              bumpNpcAffinity(speakerNpc.id, 1);
+              beginFittingSession(speakerNpc, mode);
+              return;
+            }
+            if (label === "今日は別の話") {
+              bumpNpcAffinity(speakerNpc.id, 1);
+              const skip = profile.replies[label];
+              showDialogueLine({
+                speaker: speakerNpc.name,
+                text: (skip && skip.reply) || "…うん。また話そう。"
+              });
+              dialogueChoicesEl.innerHTML = "";
+              return;
+            }
             const config = profile.replies[label];
             if (!config) return;
             if (config.action === "open_shop") {
@@ -3359,11 +3529,13 @@
                 showDialogueLine({ speaker: speakerNpc.name, text: config.reply });
               }
               const mode = config.action === "try_purchase_warm" ? "chat_warm" : "chat";
-              window.setTimeout(() => applyChatPurchase(speakerNpc, mode), 420);
+              bumpNpcAffinity(speakerNpc.id, 1);
+              window.setTimeout(() => beginFittingSession(speakerNpc, mode), 360);
               dialogueChoicesEl.innerHTML = "";
               return;
             }
             showDialogueLine({ speaker: speakerNpc.name, text: config.reply });
+            bumpNpcAffinity(speakerNpc.id, 2);
             if (config.followUps && config.followUps.length > 0) {
               showDialogueChoices(config.followUps, "followUp", speakerNpc);
             } else {
@@ -3392,10 +3564,14 @@
         : getActiveNpc();
       if (!npc) return;
       activeNpcId = npc.id;
+      activeFitting = null;
       const garment = getGarmentById(npc.currentGarmentId);
       activeDialogue = options.afterPurchase && garment
         ? getPostPurchaseDialogue(npc, garment, options.purchaseReason || "mood")
         : getDialogueForNpc(npc);
+      if (!options.afterPurchase && !options.skipAffinity && activeDialogue.id !== "shop_chat") {
+        bumpNpcAffinity(npc.id, 2);
+      }
       showDialogueLine(activeDialogue.lines[0]);
       showDialogueChoices(activeDialogue.choices, "opening", npc);
     }
@@ -3411,7 +3587,8 @@
       if (personality) {
         const tag = document.createElement("div");
         tag.className = "npcCardPersonality";
-        tag.textContent = personality;
+        const tier = getAffinityTier(getNpcAffinity(npc));
+        tag.textContent = `${personality} · ${getAffinityTierLabel(tier)}`;
         card.appendChild(tag);
       }
 
@@ -3519,26 +3696,8 @@
         return;
       }
 
-      const result = tryNpcPurchase(npc.id, { mode: "browse" });
-      renderHangout();
-      renderShop();
-      if (result?.bought) {
-        const name = ensureGarmentDisplayName(result.garment);
-        messageEl.textContent = `${npc.name}が「${name}」を選んだ — 服屋で「着用中」を確認`;
-        startHangoutDialogue({
-          afterPurchase: true,
-          npcId: npc.id,
-          purchaseReason: result.reason
-        });
-      } else {
-        const hint = result?.passHint || "pass";
-        messageEl.textContent = `${npc.name}は、今日は選ばなかった`;
-        showDialogueLine({
-          speaker: npc.name,
-          text: profile.browsePass ? profile.browsePass(hint) : profile.noUnsold
-        });
-        dialogueChoicesEl.innerHTML = "";
-      }
+      bumpNpcAffinity(npc.id, 1);
+      beginFittingSession(npc, "browse");
     }
 
     function syncNpcGarmentState() {
@@ -3630,12 +3789,18 @@
 
       const purchaseList = loadPurchases();
       const purchasedIds = new Set(purchaseList.map((p) => p.garmentId));
-      const candidates = allGarments.filter((g) => !purchasedIds.has(g.id));
+      let candidates = allGarments.filter((g) => !purchasedIds.has(g.id));
       if (candidates.length === 0) return null;
 
       const residentList = loadResidents();
       const npc = residentList.find((r) => r.id === npcId);
       if (!npc) return null;
+
+      if (options.garmentId) {
+        const forced = candidates.find((g) => g.id === options.garmentId);
+        if (!forced) return null;
+        candidates = [forced];
+      }
 
       const scored = candidates.map((garment) => {
         const { score, reason } = scoreGarmentForNpc(garment, npc);
@@ -3654,7 +3819,10 @@
       } else if (mode === "chat_warm") {
         threshold -= 0.18;
         whim *= 0.3;
+      } else if (mode === "browse") {
+        threshold -= 0.05;
       }
+      threshold -= Number(options.reactionMod) || 0;
 
       if (best.score < threshold) {
         return {
@@ -3692,9 +3860,15 @@
       npc.currentGarmentId = best.garment.id;
       saveResidents(residentList);
 
+      // ひとり買い（autonomous）では親密度は上がらない
+      if (options.grantAffinity && mode !== "autonomous") {
+        const gain = mode === "chat_warm" ? 10 : mode === "chat" ? 8 : 6;
+        bumpNpcAffinity(npcId, gain);
+      }
+
       return {
         bought: true,
-        npc,
+        npc: loadResidents().find((r) => r.id === npcId) || npc,
         garment: best.garment,
         purchase,
         reason: best.reason,
@@ -3800,6 +3974,10 @@
             changed = true;
           }
         });
+        if (resident.affinity === undefined) {
+          resident.affinity = 0;
+          changed = true;
+        }
       });
       if (changed) saveResidents(stored);
     }
