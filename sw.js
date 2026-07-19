@@ -1,4 +1,4 @@
-const CACHE = "ito-shell-v50";
+const CACHE = "ito-shell-v51";
 const SHELL_PATH = "./thread_gps_pwa.html";
 const PRECACHE = [
   SHELL_PATH,
