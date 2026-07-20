@@ -615,6 +615,15 @@
       margin-top: 18px;
     }
 
+    #spinOverlaySecondaryActions {
+      display: flex;
+      gap: 8px;
+    }
+
+    #spinOverlaySecondaryActions button {
+      flex: 1;
+    }
+
     #spinOverlay.visible.morning #spinOverlayActions {
       display: flex;
     }
@@ -628,11 +637,12 @@
       cursor: pointer;
     }
 
-    #spinOverlayHangoutButton {
-      background: #a78bfa;
-      color: #1a1520;
+    #spinOverlayWalkButton {
+      background: #7dd3fc;
+      color: #0f172a;
     }
 
+    #spinOverlayHangoutButton,
     #spinOverlayDismissButton {
       background: rgba(255,255,255,0.1);
       color: white;
@@ -1367,8 +1377,11 @@
       <div id="spinOverlayTitle"></div>
       <div id="spinOverlaySubtitle"></div>
       <div id="spinOverlayActions">
-        <button id="spinOverlayHangoutButton" type="button">たむろ場へ</button>
-        <button id="spinOverlayDismissButton" type="button" class="secondary">服屋で見る</button>
+        <button id="spinOverlayWalkButton" type="button">歩き始める</button>
+        <div id="spinOverlaySecondaryActions">
+          <button id="spinOverlayDismissButton" type="button" class="secondary">服屋</button>
+          <button id="spinOverlayHangoutButton" type="button" class="secondary">たむろ</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1391,7 +1404,7 @@
       <p>日常の通勤や散歩のまま、2週間使ってみます。目標は <strong>服が10着以上</strong> 並ぶこと。</p>
       <ul>
         <li>毎日：GPS開始して歩く（画面は開いたまま）</li>
-        <li>翌朝：服屋を開いて、たむろ場へ</li>
+        <li>翌朝：服ができたら、そのまま歩き始められる</li>
         <li>週1回くらい：記録を書き出す（バックアップ）</li>
         <li>位置情報は端末内だけ。外に送りません</li>
       </ul>
@@ -1455,9 +1468,9 @@
     const PX_PER_M = 14;
     const GRID_M = 5;
     const KEYBOARD_SPEED_MPS = 8;
-    const DEV_SESSION_DAY = 12;
-    const APP_SHELL_VERSION = 53;
-    const OFFLINE_CACHE = "ito-shell-v53";
+    const DEV_SESSION_DAY = 13;
+    const APP_SHELL_VERSION = 54;
+    const OFFLINE_CACHE = "ito-shell-v54";
     const BACKUP_FORMAT_VERSION = 1;
     const PERSONAL_TEST_DAYS = 14;
     const PERSONAL_TEST_GARMENT_GOAL = 10;
@@ -1550,6 +1563,7 @@
     const spinOverlayTitleEl = document.getElementById("spinOverlayTitle");
     const spinOverlaySubtitleEl = document.getElementById("spinOverlaySubtitle");
     const spinOverlayActionsEl = document.getElementById("spinOverlayActions");
+    const spinOverlayWalkButtonEl = document.getElementById("spinOverlayWalkButton");
     const spinOverlayHangoutButtonEl = document.getElementById("spinOverlayHangoutButton");
     const spinOverlayDismissButtonEl = document.getElementById("spinOverlayDismissButton");
 
@@ -3016,8 +3030,7 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
       svg.setAttribute("height", "150");
       renderGarmentPreview(svg, garment);
       spinOverlayPreviewEl.appendChild(svg);
-      switchView("shop");
-      messageEl.textContent = "服屋で確かめて、たむろ場へ";
+      messageEl.textContent = "昨日の服ができた — 歩き始めるか、服屋で確かめて";
     }
 
     function showMorningRestReveal(restDays) {
@@ -3033,8 +3046,7 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
         subtitle,
         morning: true
       });
-      switchView("shop");
-      messageEl.textContent = "静かな日も、そのまま一日";
+      messageEl.textContent = "静かな日も、そのまま一日 — 歩き始めてもよい";
     }
 
     function renderColorBreakdown(garment) {
@@ -6459,6 +6471,14 @@ const ITO_CHOICE_TIME_OVERRIDES = {"おはよう":{"morning":"おはよう","day
     hangoutTalkButtonEl.addEventListener("click", startHangoutDialogue);
     hangoutInviteShopButtonEl.addEventListener("click", inviteNpcToShopTalk);
     hangoutResetPurchasesButtonEl.addEventListener("click", resetPurchases);
+
+    spinOverlayWalkButtonEl.addEventListener("click", () => {
+      hideSpinOverlay();
+      switchView("thread");
+      messageEl.textContent = segments.length === 0
+        ? "GPS を開始して、歩き始めましょう"
+        : "WASD で歩く。0:00 に自動で紡がれます";
+    });
 
     spinOverlayHangoutButtonEl.addEventListener("click", () => {
       hideSpinOverlay();
